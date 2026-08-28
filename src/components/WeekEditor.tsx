@@ -333,7 +333,6 @@ export function WeekEditor({
       const path = await window.api.exportPdf({
         entryIds: [draft.id],
         layout: settings.pdfLayout,
-        coverSheet: settings.coverSheet,
         language: settings.language,
       })
       if (path) {

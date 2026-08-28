@@ -46,22 +46,18 @@ const AppContext = React.createContext<AppContextValue | null>(null)
 const EMPTY: AppSnapshot = {
   profile: {
     fullName: '',
-    address: '',
     occupation: '',
-    specialization: '',
     company: '',
     trainer: '',
     department: '',
     startDate: '',
     durationYears: 3,
-    bookNumber: '1',
   },
   settings: {
     language: 'de',
     theme: 'system',
     pdfLayout: 'classic',
     entryMode: 'daily',
-    coverSheet: true,
     lastBackupAt: null,
     backupReminderDays: 14,
   },

@@ -165,33 +165,6 @@ Hazır `.exe` dosyaları `release/` klasöründe oluşur.
 | Kurulum `better-sqlite3` üzerinde takılıyor | Bu Node sürümü için hazır dosyalar yok. 1. adımdaki LTS sürümünü kullan. |
 | Pencere bembeyaz açılıyor | Önce `npm run build`, sonra `npm start` çalıştır. |
 
-## Resmi IHK formuna uygunluk
-
-Klasik PDF düzeni, resmi "Ausbildungsnachweis (wöchentlich)" formunu izler:
-
-| Resmi form | Bu uygulamada |
-| --- | --- |
-| Kapak: defter no., ad, adres, meslek, uzmanlık, firma, eğitmen, başlangıç ve bitiş | İsteğe bağlı ilk sayfa; bitiş tarihi başlangıç ve süreden hesaplanır |
-| Başlık: ad, eğitim yılı, eğitim alanı, hafta başlangıç–bitiş | Her sayfada, profil ve takvim haftasından |
-| 1. blok "Betriebliche Tätigkeiten" | Aynı başlık, aynı sıra |
-| 2. blok "Ausbildungseinheiten, betrieblicher Unterricht, sonstige Schulungen" | Aynı başlık, aynı sıra |
-| 3. blok "Themen des Berufsschulunterrichts" | Aynı başlık, aynı sıra |
-| Üç imza satırı (öğrenci, işveren, diğer onaylar) | Üçü de var |
-
-Resmi formda bulunmayan bir saat sütunu eklendi — birçok firma bunu ayrıca istiyor.
-Günlük kipte ilk bloğun yerini tarih, gün türü, yapılan iş ve saat içeren bir gün
-tablosu alır.
-
-> Formlar odalar arasında küçük farklar gösterir. İlk teslimden önce kendi IHK'nın
-> şablonuna bakmak ve firmana hangi biçimi istediklerini sormak iyi olur.
-
-## Planlananlar
-
-- Birden fazla haftayı seçip tek dosyada dışa aktarma
-- Üçüncü kayıt biçimi olarak aylık görünüm
-- Hazır metinlerin eğitim yılına göre ayrılması
-- macOS ve Linux paketleri
-
 ## Teknik yapı
 
 | Alan | Kullanılan |
@@ -229,6 +202,13 @@ arayüzden geçer — böylece saldırı yüzeyi küçük kalır ve veriye eriş
 `electron/db.ts` bilinçli olarak dar bir fonksiyon kümesinin arkasına saklandı. İleride
 bulut senkronizasyonu eklenirse yalnızca bu fonksiyonların değişmesi yeterli olur,
 arayüze dokunmak gerekmez.
+
+## Planlananlar
+
+- Birden fazla haftayı seçip tek dosyada dışa aktarma
+- Üçüncü kayıt biçimi olarak aylık görünüm
+- Hazır metinlerin eğitim yılına göre ayrılması
+- macOS ve Linux paketleri
 
 ## Katkı
 

@@ -172,7 +172,7 @@ function registerIpc(): void {
     })
     if (canceled || !filePath) return null
 
-    const html = buildReportHtml(selected, profile, req.layout, req.language, req.coverSheet)
+    const html = buildReportHtml(selected, profile, req.layout, req.language)
     await renderPdfToFile(html, filePath)
     return filePath
   })

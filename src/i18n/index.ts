@@ -195,13 +195,6 @@ const de = {
     'Tipp: fasse die Woche in ganzen Sätzen zusammen und nenne die eingesetzten Werkzeuge und Verfahren.',
   hoursShort: 'Std.',
 
-  fieldAddress: 'Anschrift',
-  fieldSpecialization: 'Fachrichtung/Schwerpunkt',
-  fieldBookNumber: 'Heft-Nr.',
-  fieldBookNumberHint: 'Meist eine Nummer je Ausbildungsjahr.',
-  profileCoverHint: 'Diese Angaben stehen auf dem Deckblatt des Ausbildungsnachweises.',
-  settingsCover: 'Deckblatt voranstellen',
-  settingsCoverHint: 'Erste Seite mit Heft-Nr., Anschrift und Ausbildungszeitraum, wie im IHK-Vordruck.',
 }
 
 type Dict = typeof de
@@ -389,13 +382,6 @@ const en: Dict = {
     'Tip: summarise the week in full sentences and name the tools and methods you used.',
   hoursShort: 'h',
 
-  fieldAddress: 'Address',
-  fieldSpecialization: 'Specialisation / focus',
-  fieldBookNumber: 'Booklet no.',
-  fieldBookNumberHint: 'Usually one number per training year.',
-  profileCoverHint: 'These details appear on the cover sheet of the training record.',
-  settingsCover: 'Add a cover sheet',
-  settingsCoverHint: 'First page with booklet number, address and training period, as in the IHK form.',
 }
 
 const tr: Dict = {
@@ -581,13 +567,6 @@ const tr: Dict = {
     'İpucu: haftayı tam cümlelerle özetle ve kullandığın araç ve yöntemleri belirt.',
   hoursShort: 'sa.',
 
-  fieldAddress: 'Adres',
-  fieldSpecialization: 'Uzmanlık alanı',
-  fieldBookNumber: 'Defter no.',
-  fieldBookNumberHint: 'Genelde her eğitim yılı için bir numara.',
-  profileCoverHint: 'Bu bilgiler eğitim kayıt defterinin kapak sayfasında yer alır.',
-  settingsCover: 'Kapak sayfası ekle',
-  settingsCoverHint: 'Defter no., adres ve eğitim dönemini içeren ilk sayfa — IHK formundaki gibi.',
 }
 
 export const DICTS: Record<Language, Dict> = { de, en, tr }

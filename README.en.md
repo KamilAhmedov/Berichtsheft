@@ -162,33 +162,6 @@ The resulting `.exe` files land in the `release/` folder.
 | Install fails on `better-sqlite3` | No prebuilt binary for this Node version. Use the LTS release from step 1. |
 | The window stays blank | Run `npm run build`, then `npm start`. |
 
-## Alignment with the official IHK form
-
-The classic PDF layout follows the official "Ausbildungsnachweis (wöchentlich)" form:
-
-| Official form | In this app |
-| --- | --- |
-| Cover sheet with booklet no., name, address, occupation, specialisation, company, trainer, start and end | Optional first page; the end date is derived from start and duration |
-| Header with name, training year, training area, week from–to | On every sheet, from profile and calendar week |
-| Block 1 "Betriebliche Tätigkeiten" | Same heading, same position |
-| Block 2 "Ausbildungseinheiten, betrieblicher Unterricht, sonstige Schulungen" | Same heading, same position |
-| Block 3 "Themen des Berufsschulunterrichts" | Same heading, same position |
-| Three signature lines (trainee, employer, further endorsements) | All three present |
-
-An hours column is added, which the official form does not require — many companies
-ask for it anyway. In daily mode a day table (date, type of day, activity, hours)
-takes the place of the first block.
-
-> Forms differ slightly between chambers. Before the first submission, check your
-> own IHK template and ask your company which form they expect.
-
-## Planned
-
-- Selecting several weeks for a combined export
-- A monthly view as a third entry mode
-- Snippets scoped per training year instead of globally
-- macOS and Linux packages
-
 ## Tech
 
 | Area | Used |
@@ -226,6 +199,13 @@ traceable in one place.
 
 `electron/db.ts` sits behind a deliberately small set of functions. Adding cloud sync later
 would mean replacing those functions only, without touching the interface.
+
+## Planned
+
+- Selecting several weeks for a combined export
+- A monthly view as a third entry mode
+- Snippets scoped per training year instead of globally
+- macOS and Linux packages
 
 ## Contributing
 

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import { Switch } from '@/components/ui/switch'
 import {
   Dialog,
   DialogContent,
@@ -197,14 +196,6 @@ export function SettingsView() {
             ))}
           </div>
 
-          <Separator className="my-4" />
-
-          <Row label={t('settingsCover')} hint={t('settingsCoverHint')}>
-            <Switch
-              checked={settings.coverSheet}
-              onCheckedChange={(checked) => saveSettings({ coverSheet: checked })}
-            />
-          </Row>
         </CardContent>
       </Card>
 

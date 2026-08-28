@@ -168,35 +168,6 @@ Die fertigen `.exe`-Dateien liegen anschließend im Ordner `release/`.
 | Die Installation bricht bei `better-sqlite3` ab | Es fehlen fertige Binärdateien für diese Node-Version. Mit der LTS-Version von Node.js arbeiten (siehe Schritt 1). |
 | Das Fenster bleibt weiß | `npm run build` ausführen und danach `npm start`. |
 
-## Anlehnung an den IHK-Vordruck
-
-Das klassische PDF-Layout folgt dem amtlichen Vordruck "Ausbildungsnachweis
-(wöchentlich)":
-
-| Vordruck | In dieser App |
-| --- | --- |
-| Deckblatt mit Heft-Nr., Name, Adresse, Beruf, Fachrichtung, Betrieb, Ausbilder/in, Beginn und Ende | Optionale erste Seite; das Ende wird aus Beginn und Dauer berechnet |
-| Kopf mit Name, Ausbildungsjahr, Ausbildungsbereich, Woche von–bis | Auf jedem Blatt, aus Profil und Kalenderwoche |
-| Block 1 "Betriebliche Tätigkeiten" | Gleiche Überschrift, gleiche Position |
-| Block 2 "Ausbildungseinheiten, betrieblicher Unterricht, sonstige Schulungen" | Gleiche Überschrift, gleiche Position |
-| Block 3 "Themen des Berufsschulunterrichts" | Gleiche Überschrift, gleiche Position |
-| Drei Unterschriftszeilen (Auszubildende/r, Ausbildende/r, weitere Sichtvermerke) | Alle drei vorhanden |
-
-Ergänzt wird eine Stundenspalte, die der Vordruck nicht vorschreibt — viele Betriebe
-verlangen sie zusätzlich. Im täglichen Modus tritt an die Stelle des ersten Blocks
-eine Tagestabelle mit Datum, Art des Tages, Tätigkeit und Stunden.
-
-> Die Vordrucke unterscheiden sich zwischen den Kammern leicht. Vor der ersten
-> Abgabe lohnt ein kurzer Blick auf die Vorlage der eigenen IHK und eine Rückfrage
-> beim Ausbildungsbetrieb, welche Form dort verlangt wird.
-
-## Geplant
-
-- Auswahl mehrerer Wochen für einen gemeinsamen Export
-- Monatsansicht als dritte Erfassungsart
-- Vorlagen je Lehrjahr statt global
-- macOS- und Linux-Pakete
-
 ## Technik
 
 | Bereich | Verwendet |
@@ -234,6 +205,13 @@ Datenzugriff an einer Stelle nachvollziehbar.
 
 `electron/db.ts` ist bewusst hinter einer engen Funktionsmenge gekapselt. Ein späterer
 Cloud-Abgleich müsste nur diese Funktionen ersetzen, ohne die Oberfläche anzufassen.
+
+## Geplant
+
+- Auswahl mehrerer Wochen für einen gemeinsamen Export
+- Monatsansicht als dritte Erfassungsart
+- Textbausteine je Lehrjahr statt global
+- Pakete für macOS und Linux
 
 ## Mitmachen
 

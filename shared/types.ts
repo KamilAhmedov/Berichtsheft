@@ -49,11 +49,7 @@ export interface WeekEntry {
 
 export interface Profile {
   fullName: string
-  /** Anschrift — steht auf dem Deckblatt des Ausbildungsnachweises. */
-  address: string
   occupation: string
-  /** Fachrichtung oder Schwerpunkt, falls der Beruf einen vorsieht. */
-  specialization: string
   company: string
   trainer: string
   department: string
@@ -61,8 +57,6 @@ export interface Profile {
   startDate: string
   /** Dauer in Jahren: 2, 2.5, 3 oder 3.5. */
   durationYears: number
-  /** Heft-Nr. auf dem Deckblatt — meist 1, 2, 3 je Ausbildungsjahr. */
-  bookNumber: string
 }
 
 export interface Settings {
@@ -71,8 +65,6 @@ export interface Settings {
   pdfLayout: PdfLayout
   /** Ob Berichte täglich oder als Wochentext erfasst werden. */
   entryMode: EntryMode
-  /** Dem PDF ein Deckblatt nach IHK-Vorlage voranstellen. */
-  coverSheet: boolean
   /** ISO-Zeitstempel des letzten Exports, für die Backup-Erinnerung. */
   lastBackupAt: string | null
   /** Erinnerung, wenn seit so vielen Tagen kein Export gemacht wurde. */
@@ -114,8 +106,6 @@ export interface StorageInfo {
 }
 
 export interface PdfRequest {
-  /** Deckblatt voranstellen. */
-  coverSheet: boolean
   /** Welche Wochen ins PDF sollen. Leer = alle. */
   entryIds: string[]
   layout: PdfLayout

@@ -21,15 +21,12 @@ import type {
 
 const DEFAULT_PROFILE: Profile = {
   fullName: '',
-  address: '',
   occupation: '',
-  specialization: '',
   company: '',
   trainer: '',
   department: '',
   startDate: '',
   durationYears: 3,
-  bookNumber: '1',
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -37,7 +34,6 @@ const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   pdfLayout: 'classic',
   entryMode: 'daily',
-  coverSheet: true,
   lastBackupAt: null,
   backupReminderDays: 14,
 }

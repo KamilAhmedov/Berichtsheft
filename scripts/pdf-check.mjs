@@ -32,9 +32,6 @@ const OUT = ${JSON.stringify(outDir)}
 
 const profile = {
   fullName: 'Mustermann, Max',
-  address: 'Musterstraße 12, 53111 Bonn',
-  specialization: 'Anwendungsentwicklung',
-  bookNumber: '1',
   occupation: 'Fachinformatiker/in für Anwendungsentwicklung',
   company: 'Beispiel GmbH',
   trainer: 'Sabine Schmidt',
@@ -106,14 +103,12 @@ app.whenReady().then(async () => {
     ['modern-weekly', [weekly], 'modern', 'de'],
     ['classic-turkish', [turkish], 'classic', 'tr'],
     ['modern-multi', [daily, weekly], 'modern', 'en'],
-    ['cover-classic', [daily], 'classic', 'de', true],
-    ['cover-modern', [weekly], 'modern', 'de', true],
   ]
 
   const log = []
-  for (const [name, entries, layout, lang, cover] of cases) {
+  for (const [name, entries, layout, lang] of cases) {
     try {
-      const html = buildReportHtml(entries, profile, layout, lang, Boolean(cover))
+      const html = buildReportHtml(entries, profile, layout, lang)
       await renderPdfToFile(html, join(OUT, name + '.pdf'))
       await snapshot(html, join(OUT, name + '.png'))
       log.push('OK   ' + name)

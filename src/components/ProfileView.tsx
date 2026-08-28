@@ -57,26 +57,6 @@ export function ProfileView() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="specialization">
-                {t('fieldSpecialization')}{' '}
-                <span className="font-normal text-muted-foreground">({t('optional')})</span>
-              </Label>
-              <Input
-                id="specialization"
-                value={draft.specialization}
-                onChange={(e) => field('specialization', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="address">{t('fieldAddress')}</Label>
-              <Input
-                id="address"
-                value={draft.address}
-                onChange={(e) => field('address', e.target.value)}
-                placeholder="Musterstraße 1, 12345 Musterstadt"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="company">{t('fieldCompanyName')}</Label>
               <Input
                 id="company"
@@ -133,21 +113,6 @@ export function ProfileView() {
               </div>
             </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-5">
-            <div className="space-y-2">
-              <Label htmlFor="bookNumber">{t('fieldBookNumber')}</Label>
-              <Input
-                id="bookNumber"
-                value={draft.bookNumber}
-                onChange={(e) => field('bookNumber', e.target.value)}
-                className="w-24"
-              />
-              <p className="text-xs text-muted-foreground">{t('fieldBookNumberHint')}</p>
-            </div>
-          </div>
-
-          <p className="text-xs text-muted-foreground">{t('profileCoverHint')}</p>
 
           <div className="flex justify-end pt-1">
             <Button onClick={handleSave} disabled={!dirty}>

@@ -110,7 +110,6 @@ export function WeeksView({
       const path = await window.api.exportPdf({
         entryIds: ids,
         layout: settings.pdfLayout,
-        coverSheet: settings.coverSheet,
         language: settings.language,
       })
       if (path) {

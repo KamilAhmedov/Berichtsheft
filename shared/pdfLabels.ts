@@ -4,37 +4,20 @@ import type { DayKind, Language } from './types'
  * Beschriftungen für den PDF-Ausdruck. Bewusst in `shared/`, weil das PDF im
  * Hauptprozess erzeugt wird und dort die i18n-Dateien des Renderers fehlen.
  *
- * Die deutschen Texte folgen der Wortwahl der IHK-Vordrucke, damit der
- * Ausdruck neben dem amtlichen Formular nicht auffällt. Englisch und Türkisch
- * sind Übersetzungen davon — für die Abgabe bei der IHK zählt die deutsche
- * Fassung.
+ * Die deutschen Texte übernehmen die Wortwahl der IHK-Vordrucke. Englisch und
+ * Türkisch sind Übersetzungen davon — für die Abgabe zählt die deutsche Fassung.
  */
 export interface PdfLabels {
   title: string
   subtitleWeekly: string
   subtitleDaily: string
 
-  // Deckblatt
-  coverBookNumber: string
-  coverName: string
-  coverAddress: string
-  coverOccupation: string
-  coverSpecialization: string
-  coverCompany: string
-  coverTrainer: string
-  coverStart: string
-  coverEnd: string
-  coverNoteTitle: string
-  coverNote: string
-
-  // Kopf des Wochenblatts
   traineeName: string
   trainingYear: string
   trainingArea: string
   weekFrom: string
   until: string
 
-  // Blöcke — Reihenfolge und Wortlaut wie im Vordruck
   blockCompany: string
   blockUnits: string
   blockSchool: string
@@ -42,12 +25,13 @@ export interface PdfLabels {
   hours: string
   total: string
   day: string
-  date: string
+  activity: string
   kind: string
   dayKinds: Record<DayKind, string>
 
   signTrainee: string
   signTrainer: string
+  signGuardian: string
   signOther: string
 
   noEntries: string
@@ -55,22 +39,9 @@ export interface PdfLabels {
 
 export const PDF_LABELS: Record<Language, PdfLabels> = {
   de: {
-    title: 'Ausbildungsnachweis',
-    subtitleWeekly: 'wöchentlich',
-    subtitleDaily: 'täglich',
-
-    coverBookNumber: 'Heft-Nr.',
-    coverName: 'Name, Vorname',
-    coverAddress: 'Adresse',
-    coverOccupation: 'Ausbildungsberuf',
-    coverSpecialization: 'Fachrichtung/Schwerpunkt',
-    coverCompany: 'Ausbildungsbetrieb',
-    coverTrainer: 'Verantwortliche/r Ausbilder/in',
-    coverStart: 'Beginn der Ausbildung',
-    coverEnd: 'Ende der Ausbildung',
-    coverNoteTitle: 'Hinweise',
-    coverNote:
-      'Der ordnungsgemäß geführte Ausbildungsnachweis ist Zulassungsvoraussetzung zur Abschlussprüfung gemäß § 43 Abs. 1 Nr. 2 BBiG. Jedes Blatt ist mit dem Namen der/des Auszubildenden, dem Ausbildungsjahr und dem Berichtszeitraum zu versehen. Der Nachweis muss mindestens stichwortartig den Inhalt der betrieblichen Ausbildung wiedergeben; betriebliche Tätigkeiten, Unterweisungen und die Themen des Berufsschulunterrichts sind aufzunehmen.',
+    title: 'Ausbildungsnachweis (Berichtsheft)',
+    subtitleWeekly: '– wöchentlich –',
+    subtitleDaily: '– täglich –',
 
     traineeName: 'Name des/der Auszubildenden',
     trainingYear: 'Ausbildungsjahr',
@@ -79,13 +50,13 @@ export const PDF_LABELS: Record<Language, PdfLabels> = {
     until: 'bis',
 
     blockCompany: 'Betriebliche Tätigkeiten',
-    blockUnits: 'Ausbildungseinheiten, betrieblicher Unterricht, sonstige Schulungen',
+    blockUnits: 'Unterweisungen, betrieblicher Unterricht, sonstige Schulungen',
     blockSchool: 'Themen des Berufsschulunterrichts',
 
     hours: 'Stunden',
     total: 'Gesamt',
     day: 'Tag',
-    date: 'Datum',
+    activity: 'Tätigkeit',
     kind: 'Art',
     dayKinds: {
       company: 'Betrieb',
@@ -98,28 +69,16 @@ export const PDF_LABELS: Record<Language, PdfLabels> = {
 
     signTrainee: 'Datum, Unterschrift Auszubildende/r',
     signTrainer: 'Datum, Unterschrift Ausbildende/r oder Ausbilder/in',
-    signOther: 'Datum, weitere Sichtvermerke (z. B. Ausbildungsbeauftragte)',
+    signGuardian: 'Datum, Unterschrift gesetzliche/r Vertreter/in',
+    signOther: 'ggf. weitere Sichtvermerke (z. B. Arbeitnehmervertreter)',
 
     noEntries: 'Keine Einträge im gewählten Zeitraum.',
   },
 
   en: {
-    title: 'Training Record',
-    subtitleWeekly: 'weekly',
-    subtitleDaily: 'daily',
-
-    coverBookNumber: 'Booklet no.',
-    coverName: 'Surname, first name',
-    coverAddress: 'Address',
-    coverOccupation: 'Occupation',
-    coverSpecialization: 'Specialisation / focus',
-    coverCompany: 'Training company',
-    coverTrainer: 'Responsible trainer',
-    coverStart: 'Start of training',
-    coverEnd: 'End of training',
-    coverNoteTitle: 'Notes',
-    coverNote:
-      'A properly kept training record is a precondition for admission to the final examination under § 43 (1) no. 2 BBiG. Every sheet must carry the trainee name, the training year and the reporting period. The record must state, at least in keywords, the content of the in-company training; company activities, instruction units and the topics covered at vocational school are to be included.',
+    title: 'Ausbildungsnachweis (Training Record)',
+    subtitleWeekly: '– weekly –',
+    subtitleDaily: '– daily –',
 
     traineeName: 'Name of trainee',
     trainingYear: 'Training year',
@@ -128,13 +87,13 @@ export const PDF_LABELS: Record<Language, PdfLabels> = {
     until: 'to',
 
     blockCompany: 'Work in the company',
-    blockUnits: 'Instruction units, in-house lessons, other training',
+    blockUnits: 'Instruction, in-house lessons, other training',
     blockSchool: 'Topics covered at vocational school',
 
     hours: 'Hours',
     total: 'Total',
     day: 'Day',
-    date: 'Date',
+    activity: 'Activity',
     kind: 'Type',
     dayKinds: {
       company: 'Company',
@@ -147,43 +106,31 @@ export const PDF_LABELS: Record<Language, PdfLabels> = {
 
     signTrainee: 'Date, signature of trainee',
     signTrainer: 'Date, signature of employer or trainer',
-    signOther: 'Date, further endorsements (e.g. training officer)',
+    signGuardian: 'Date, signature of legal guardian',
+    signOther: 'Further endorsements if applicable (e.g. works council)',
 
     noEntries: 'No entries in the selected period.',
   },
 
   tr: {
-    title: 'Ausbildungsnachweis',
-    subtitleWeekly: 'haftalık',
-    subtitleDaily: 'günlük',
-
-    coverBookNumber: 'Defter no.',
-    coverName: 'Soyadı, adı',
-    coverAddress: 'Adres',
-    coverOccupation: 'Meslek',
-    coverSpecialization: 'Uzmanlık alanı',
-    coverCompany: 'Eğitim veren firma',
-    coverTrainer: 'Sorumlu eğitmen',
-    coverStart: 'Eğitimin başlangıcı',
-    coverEnd: 'Eğitimin bitişi',
-    coverNoteTitle: 'Açıklamalar',
-    coverNote:
-      'Usulüne uygun tutulmuş eğitim kayıt defteri, BBiG § 43 f. 1 no. 2 uyarınca bitirme sınavına girmenin ön şartıdır. Her sayfada öğrencinin adı, eğitim yılı ve rapor dönemi bulunmalıdır. Defter, firmadaki eğitimin içeriğini en azından anahtar kelimelerle yansıtmalı; firmadaki çalışmalar, verilen eğitimler ve meslek okulunda işlenen konular yer almalıdır.',
+    title: 'Ausbildungsnachweis (Eğitim kayıt defteri)',
+    subtitleWeekly: '– haftalık –',
+    subtitleDaily: '– günlük –',
 
     traineeName: 'Öğrencinin adı',
     trainingYear: 'Eğitim yılı',
     trainingArea: 'Eğitim alanı',
     weekFrom: 'Eğitim haftası',
-    until: '—',
+    until: 'bitiş',
 
     blockCompany: 'Firmadaki çalışmalar',
-    blockUnits: 'Eğitim birimleri, firma içi dersler, diğer kurslar',
+    blockUnits: 'Eğitimler, firma içi dersler, diğer kurslar',
     blockSchool: 'Meslek okulunda işlenen konular',
 
     hours: 'Saat',
     total: 'Toplam',
     day: 'Gün',
-    date: 'Tarih',
+    activity: 'Yapılan iş',
     kind: 'Tür',
     dayKinds: {
       company: 'Firma',
@@ -196,7 +143,8 @@ export const PDF_LABELS: Record<Language, PdfLabels> = {
 
     signTrainee: 'Tarih, öğrenci imzası',
     signTrainer: 'Tarih, işveren veya eğitmen imzası',
-    signOther: 'Tarih, diğer onaylar (ör. eğitim sorumlusu)',
+    signGuardian: 'Tarih, yasal vasi imzası',
+    signOther: 'Varsa diğer onaylar (ör. işçi temsilcisi)',
 
     noEntries: 'Seçilen dönemde kayıt yok.',
   },
