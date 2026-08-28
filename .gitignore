@@ -1,0 +1,19 @@
+# Abhängigkeiten
+node_modules/
+
+# Build-Ergebnisse
+out/
+dist/
+release/
+
+# Editor und System
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs und Caches
+*.log
+npm-debug.log*
+*.tsbuildinfo
+.eslintcache

@@ -1,0 +1,125 @@
+export type EntryStatus = 'draft' | 'submitted' | 'signed'
+export type Language = 'de' | 'en' | 'tr'
+export type Theme = 'light' | 'dark' | 'system'
+export type PdfLayout = 'classic' | 'modern'
+
+/**
+ * Wöchentlich oder täglich — beide Formen sind als Ausbildungsnachweis zulässig.
+ * Welche verlangt wird, gibt der Betrieb bzw. die zuständige IHK vor; im ersten
+ * Lehrjahr ist häufig die tägliche Form vorgeschrieben.
+ */
+export type EntryMode = 'weekly' | 'daily'
+
+/** Was an einem Tag war. Bestimmt, ob Text und Stunden überhaupt sinnvoll sind. */
+export type DayKind = 'company' | 'school' | 'vacation' | 'sick' | 'holiday' | 'off'
+
+export interface DayEntry {
+  /** "YYYY-MM-DD" — ergibt sich aus der Kalenderwoche, nicht frei wählbar. */
+  date: string
+  kind: DayKind
+  text: string
+  hours: number
+}
+
+/** Ein Ausbildungsnachweis für genau eine Kalenderwoche. */
+export interface WeekEntry {
+  /** Stabiler Schlüssel im Format "2026-KW12" (ISO-Jahr + ISO-Woche). */
+  id: string
+  isoYear: number
+  isoWeek: number
+  /** Montag der Woche, "YYYY-MM-DD". */
+  startDate: string
+  /** Sonntag der Woche, "YYYY-MM-DD". */
+  endDate: string
+  /** 1..4 — Lehrjahr, aus dem Ausbildungsbeginn berechnet. */
+  trainingYear: number
+  company: string
+  companyHours: number
+  school: string
+  schoolHours: number
+  instruction: string
+  instructionHours: number
+  /** Tägliche Aufstellung (Mo–Sa). Bleibt auch im Wochenmodus erhalten. */
+  days: DayEntry[]
+  notes: string
+  status: EntryStatus
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Profile {
+  fullName: string
+  /** Anschrift — steht auf dem Deckblatt des Ausbildungsnachweises. */
+  address: string
+  occupation: string
+  /** Fachrichtung oder Schwerpunkt, falls der Beruf einen vorsieht. */
+  specialization: string
+  company: string
+  trainer: string
+  department: string
+  /** "YYYY-MM-DD" — Beginn der Ausbildung, Basis für das Lehrjahr. */
+  startDate: string
+  /** Dauer in Jahren: 2, 2.5, 3 oder 3.5. */
+  durationYears: number
+  /** Heft-Nr. auf dem Deckblatt — meist 1, 2, 3 je Ausbildungsjahr. */
+  bookNumber: string
+}
+
+export interface Settings {
+  language: Language
+  theme: Theme
+  pdfLayout: PdfLayout
+  /** Ob Berichte täglich oder als Wochentext erfasst werden. */
+  entryMode: EntryMode
+  /** Dem PDF ein Deckblatt nach IHK-Vorlage voranstellen. */
+  coverSheet: boolean
+  /** ISO-Zeitstempel des letzten Exports, für die Backup-Erinnerung. */
+  lastBackupAt: string | null
+  /** Erinnerung, wenn seit so vielen Tagen kein Export gemacht wurde. */
+  backupReminderDays: number
+}
+
+/** Wiederkehrende Textbausteine, damit man nicht jede Woche dasselbe tippt. */
+export interface Template {
+  id: string
+  title: string
+  field: 'company' | 'school' | 'instruction'
+  text: string
+}
+
+export interface BackupFile {
+  format: 'berichtsheft-backup'
+  version: 1
+  exportedAt: string
+  app: string
+  profile: Profile
+  settings: Settings
+  entries: WeekEntry[]
+  templates: Template[]
+}
+
+export interface AppSnapshot {
+  profile: Profile
+  settings: Settings
+  entries: WeekEntry[]
+  templates: Template[]
+}
+
+export interface StorageInfo {
+  dataDir: string
+  dbPath: string
+  dbSizeBytes: number
+  backupCount: number
+  appVersion: string
+}
+
+export interface PdfRequest {
+  /** Deckblatt voranstellen. */
+  coverSheet: boolean
+  /** Welche Wochen ins PDF sollen. Leer = alle. */
+  entryIds: string[]
+  layout: PdfLayout
+  language: Language
+}
+
+export type IpcResult<T> = { ok: true; data: T } | { ok: false; error: string }

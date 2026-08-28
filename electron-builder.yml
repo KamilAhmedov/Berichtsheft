@@ -1,0 +1,39 @@
+appId: de.berichtsheft.app
+productName: Berichtsheft
+copyright: MIT License
+
+directories:
+  buildResources: resources
+  output: release
+
+files:
+  - out/**/*
+  - package.json
+  - '!**/*.map'
+
+# better-sqlite3 ist ein natives Modul und muss entpackt neben der App liegen.
+asarUnpack:
+  - '**/node_modules/better-sqlite3/**'
+
+win:
+  icon: resources/icon.png
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  artifactName: ${productName}-${version}-${arch}-${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Berichtsheft
+  deleteAppDataOnUninstall: false
+  artifactName: ${productName}-Setup-${version}.${ext}
+
+portable:
+  artifactName: ${productName}-${version}-portable.${ext}
+  unpackDirName: false

@@ -1,0 +1,7 @@
+# Einheitliche Zeilenenden im Repository, unabhaengig vom Betriebssystem.
+* text=auto eol=lf
+
+# Binaerdateien nie umschreiben.
+*.png binary
+*.ico binary
+*.exe binary
