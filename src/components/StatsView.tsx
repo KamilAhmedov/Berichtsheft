@@ -1,11 +1,12 @@
 import * as React from 'react'
 import {
   Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
+  Line,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -18,7 +19,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { PageHeader } from '@/components/Shell'
 import { useApp } from '@/hooks/useApp'
 import { useChartColors, type ChartColors } from '@/hooks/useChartColors'
-import { currentWeek, isEmptyEntry, plannedWeeks, totalHours } from '@/lib/weeks'
+import {
+  currentWeek,
+  isEmptyEntry,
+  missingWeeks,
+  plannedWeeks,
+  totalHours,
+} from '@/lib/weeks'
 import { fromISODate, isoWeekStart, weekId } from '../../shared/dates'
 
 /* --------------------------------------------------------------- Bausteine */
@@ -63,14 +70,22 @@ function ChartTooltip({
   unit,
 }: {
   active?: boolean
-  payload?: Array<{ name?: string; value?: number; color?: string }>
+  payload?: Array<{
+    name?: string
+    value?: number
+    color?: string
+    payload?: { tooltipLabel?: string }
+  }>
   label?: string
   unit: string
 }) {
   if (!active || !payload?.length) return null
+  // Auf der Achse steht der Monat nur beim Wechsel; fuer den Tooltip liegt die
+  // vollstaendige Bezeichnung am Datenpunkt selbst.
+  const heading = payload[0]?.payload?.tooltipLabel ?? label
   return (
     <div className="rounded-lg border bg-popover px-3 py-2 text-xs shadow-md">
-      {label && <div className="mb-1 font-medium">{label}</div>}
+      {heading && <div className="mb-1 font-medium">{heading}</div>}
       {payload.map((item, index) => (
         <div key={index} className="flex items-center gap-2">
           <span
@@ -223,7 +238,14 @@ export function StatsView() {
     const planned = plannedWeeks(profile)
     const current = weekId(currentWeek().isoYear, currentWeek().isoWeek)
     const written = new Set(filled.map((e) => e.id))
-    const points: Array<{ label: string; written: number; elapsed: number }> = []
+    const points: Array<{
+      key: string
+      tooltipLabel: string
+      written: number
+      elapsed: number
+    }> = []
+    // Beschriftung je Achsenwert — nur beim Monatswechsel gefüllt.
+    const ticks = new Map<string, string>()
 
     let count = 0
     let elapsed = 0
@@ -238,15 +260,33 @@ export function StatsView() {
         month: 'short',
         year: '2-digit',
       })
+
+      const monday = isoWeekStart(week.isoYear, week.isoWeek)
+      ticks.set(id, month === lastMonth ? '' : month)
       points.push({
-        label: month === lastMonth ? '' : month,
+        key: id,
+        tooltipLabel:
+          'KW ' +
+          String(week.isoWeek).padStart(2, '0') +
+          ' · ' +
+          monday.toLocaleDateString(locale, {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          }),
         written: count,
         elapsed,
       })
       lastMonth = month
     }
-    return { points, elapsed, missing: Math.max(elapsed - count, 0) }
+    return { points, ticks, elapsed }
   }, [profile, filled, locale])
+
+  /**
+   * Dieselbe Zaehlung wie auf der Uebersicht: die laufende Woche gilt noch
+   * nicht als Luecke, sonst stuenden auf zwei Ansichten verschiedene Zahlen.
+   */
+  const missing = React.useMemo(() => missingWeeks(profile, entries).length, [profile, entries])
 
   const totalHoursSum = filled.reduce((sum, e) => sum + totalHours(e), 0)
   const average = filled.length ? totalHoursSum / filled.length : 0
@@ -285,7 +325,7 @@ export function StatsView() {
           }
         />
         <Figure label={t('statsAverage')} value={`${number(average)} ${t('hoursShort')}`} />
-        <Figure label={t('statWeeksMissing')} value={String(pace.missing)} />
+        <Figure label={t('statWeeksMissing')} value={String(missing)} />
       </div>
 
       <div className="mb-4">
@@ -340,9 +380,22 @@ export function StatsView() {
 
       {pace.points.length > 1 && (
         <Panel title={t('statsPace')} hint={t('statsPaceHint')}>
+          <div className="mb-3 flex flex-wrap gap-x-5 gap-y-1.5">
+            <span className="flex items-center gap-2 text-xs">
+              <span className="h-0.5 w-5 rounded-full" style={{ background: colors.primary }} />
+              {t('statsWritten')}
+            </span>
+            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span
+                className="h-0 w-5 border-t-2 border-dashed"
+                style={{ borderColor: colors.muted }}
+              />
+              {t('statsElapsed')}
+            </span>
+          </div>
           <div className="h-[190px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={pace.points} margin={{ top: 4, right: 4, bottom: 0, left: -18 }}>
+              <ComposedChart data={pace.points} margin={{ top: 4, right: 4, bottom: 0, left: -18 }}>
                 <defs>
                   <linearGradient id="runGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={colors.primary} stopOpacity={0.35} />
@@ -350,29 +403,36 @@ export function StatsView() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke={colors.border} vertical={false} />
-                <XAxis dataKey="label" {...axis} axisLine={{ stroke: colors.border }} interval={0} />
+                <XAxis
+                  dataKey="key"
+                  {...axis}
+                  axisLine={{ stroke: colors.border }}
+                  interval={0}
+                  tickFormatter={(value: string) => pace.ticks.get(value) ?? ''}
+                />
                 <YAxis {...axis} axisLine={false} width={44} allowDecimals={false} />
                 <Tooltip content={<ChartTooltip unit={t('statsWeeks')} />} />
-                <Area
-                  type="monotone"
+                <Line
+                  type="linear"
                   dataKey="elapsed"
                   name={t('statsElapsed')}
-                  stroke={colors.border}
+                  stroke={colors.muted}
                   strokeWidth={1.5}
-                  strokeDasharray="4 3"
-                  fill="none"
+                  strokeDasharray="5 4"
+                  dot={false}
                   isAnimationActive={false}
                 />
                 <Area
-                  type="monotone"
+                  type="linear"
                   dataKey="written"
                   name={t('statsWritten')}
                   stroke={colors.primary}
                   strokeWidth={2}
                   fill="url(#runGradient)"
+                  dot={false}
                   isAnimationActive={false}
                 />
-              </AreaChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </Panel>

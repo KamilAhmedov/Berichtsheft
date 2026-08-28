@@ -234,6 +234,33 @@ app.whenReady().then(async () => {
     }
   }
 
+  // Auch das Verlaufsdiagramm ganz unten anfahren — dort haengt der Tooltip
+  // nicht an der Achsenbeschriftung, sondern am Datenpunkt.
+  const linePoint = await win.webContents.executeJavaScript(
+    "(() => { const all = [...document.querySelectorAll('.recharts-surface')];" +
+      " const s = all[all.length - 1]; if (!s) return null;" +
+      " const r = s.getBoundingClientRect();" +
+      " return { x: Math.round(r.x + r.width * 0.62), y: Math.round(r.y + r.height * 0.5) }; })()",
+  )
+  if (linePoint) {
+    // Erst aus dem vorherigen Diagramm herausfahren, sonst bleibt dessen
+    // Tooltip stehen und der neue erscheint gar nicht.
+    win.webContents.sendInputEvent({ type: 'mouseMove', x: 300, y: 500 })
+    await new Promise((r) => setTimeout(r, 400))
+    for (let step = 0; step < 4; step++) {
+      win.webContents.sendInputEvent({
+        type: 'mouseMove',
+        x: linePoint.x + step,
+        y: linePoint.y + step,
+      })
+      await new Promise((r) => setTimeout(r, 200))
+    }
+    await new Promise((r) => setTimeout(r, 1000))
+    const shot = await win.webContents.capturePage()
+    writeFileSync(join(OUT, 'verlauf-tooltip' + (DARK ? '-dunkel' : '') + '.png'), shot.toPNG())
+    log.push('OK verlauf-tooltip.png')
+  }
+
   // Zusaetzlich der Dialog mit den Sicherungen — nur ueber einen Knopf erreichbar.
   const opened = await win.webContents.executeJavaScript(
     "(() => { const b = [...document.querySelectorAll('button')]" +
