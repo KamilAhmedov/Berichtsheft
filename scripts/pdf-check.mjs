@@ -50,7 +50,7 @@ const days = [
 
 const daily = {
   id: '2026-KW12', isoYear: 2026, isoWeek: 12,
-  startDate: '2026-03-16', endDate: '2026-03-22', trainingYear: 1,
+  startDate: '2026-03-16', endDate: '2026-03-22', trainingYear: 1, mode: 'daily',
   company: '', school: '', instruction: '',
   days, notes: '', status: 'draft', createdAt: '', updatedAt: '',
 }
@@ -58,6 +58,7 @@ const daily = {
 const weekly = {
   ...daily,
   id: '2026-KW13', isoWeek: 13, startDate: '2026-03-23', endDate: '2026-03-29',
+  mode: 'weekly',
   // Wochenerfassung: Stunden je Tag, aber keine Tagestexte.
   days: days.map((d, i) => ({
     ...d,
@@ -69,12 +70,27 @@ const weekly = {
   instruction: 'Unterweisung Arbeitssicherheit am Bildschirmarbeitsplatz.',
 }
 
+// Von Wochen- auf Tageserfassung umgestellt: der Wochentext muss erhalten bleiben.
+const switched = {
+  ...daily,
+  id: '2026-KW15', isoWeek: 15, startDate: '2026-04-06', endDate: '2026-04-12',
+  mode: 'daily',
+  days: days.map((d, i) => ({ ...d, date: '2026-04-0' + (6 + i) })),
+  company: 'Zuvor als Wochentext erfasst: Die Kundenverwaltung um eine Suchfunktion erweitert.',
+  school: 'Lernfeld 3: Datenbanken.',
+}
+
 // Türkische Sonderzeichen prüfen — sie scheitern bei PDF-Bibliotheken ohne
 // eingebettete Schrift, mit Chromium jedoch nicht.
 const turkish = {
   ...daily,
   id: '2026-KW14', isoWeek: 14, startDate: '2026-03-30', endDate: '2026-04-05',
-  days: days.map((d) => ({ ...d, text: d.text ? 'Müşteri kayıt formunu React ile yazdım, doğrulama ekledim. ÇĞİÖŞÜ çğıöşü' : '' })),
+  // Datumswerte an die Woche anpassen, sonst passt der Zeitraum nicht zu den Zeilen.
+  days: days.map((d, i) => ({
+    ...d,
+    date: '2026-03-' + String(30 + i),
+    text: d.text ? 'Müşteri kayıt formunu React ile yazdım, doğrulama ekledim. ÇĞİÖŞÜ çğıöşü' : '',
+  })),
 }
 
 // Ohne diesen Handler beendet Electron sich, sobald das erste Renderfenster
@@ -104,6 +120,8 @@ app.whenReady().then(async () => {
     ['modern-weekly', [weekly], 'modern', 'de'],
     ['classic-turkish', [turkish], 'classic', 'tr'],
     ['modern-multi', [daily, weekly], 'modern', 'en'],
+    ['classic-switched', [switched], 'classic', 'de'],
+    ['modern-switched', [switched], 'modern', 'de'],
   ]
 
   const log = []

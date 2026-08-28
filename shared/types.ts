@@ -33,6 +33,12 @@ export interface WeekEntry {
   endDate: string
   /** 1..4 — Lehrjahr, aus dem Ausbildungsbeginn berechnet. */
   trainingYear: number
+  /**
+   * Wie diese Woche erfasst wurde. Gehoert zur Woche, nicht zu den
+   * Einstellungen: wer im zweiten Lehrjahr auf Wochenberichte umstellt, soll
+   * die frueheren Tagesberichte unveraendert behalten.
+   */
+  mode: EntryMode
   company: string
   school: string
   instruction: string
@@ -60,7 +66,7 @@ export interface Settings {
   language: Language
   theme: Theme
   pdfLayout: PdfLayout
-  /** Ob Berichte täglich oder als Wochentext erfasst werden. */
+  /** Erfassungsart fuer neu angelegte Wochen. */
   entryMode: EntryMode
   /** ISO-Zeitstempel des letzten Exports, für die Backup-Erinnerung. */
   lastBackupAt: string | null

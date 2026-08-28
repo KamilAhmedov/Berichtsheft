@@ -34,12 +34,9 @@ function hoursText(value: number, locale: string): string {
   return value.toLocaleString(locale, { maximumFractionDigits: 1 })
 }
 
-/**
- * Tagesweise erfasst? Entscheidend sind die Tagestexte — Stunden allein
- * genuegen nicht, denn die stehen auch bei der Wochenerfassung je Tag.
- */
-function hasDays(e: WeekEntry): boolean {
-  return (e.days ?? []).some((d) => d.text.trim().length > 0)
+/** Die Erfassungsart steht an der Woche selbst. */
+function isDaily(e: WeekEntry): boolean {
+  return e.mode === 'daily'
 }
 
 function dayHours(e: WeekEntry): number {
@@ -217,6 +214,7 @@ function classicWeekly(e: WeekEntry, p: Profile, L: PdfLabels, locale: string): 
 function classicDaily(e: WeekEntry, p: Profile, L: PdfLabels, locale: string): string {
   const days = e.days ?? []
   const extras = [
+    { heading: L.blockCompany, value: e.company },
     { heading: L.blockUnits, value: e.instruction },
     { heading: L.blockSchool, value: e.school },
   ].filter((s) => s.value.trim().length > 0)
@@ -253,7 +251,7 @@ function classicDaily(e: WeekEntry, p: Profile, L: PdfLabels, locale: string): s
       <tr>
         <th class="c-day">${esc(L.day)}</th>
         <th class="c-kind">${esc(L.kind)}</th>
-        <th class="c-text">${esc(L.blockCompany)}</th>
+        <th class="c-text">${esc(L.activity)}</th>
         <th class="c-h">${esc(L.hours)}</th>
       </tr>
       ${rows}
@@ -345,7 +343,7 @@ function modernDayTable(e: WeekEntry, L: PdfLabels, locale: string, rowMm: numbe
       <tr>
         <th class="day-col">${esc(L.day)}</th>
         <th class="kind-col">${esc(L.kind)}</th>
-        <th>${esc(L.blockCompany)}</th>
+        <th>${esc(L.activity)}</th>
         <th class="hours-col">${esc(L.hours)}</th>
       </tr>
       ${rows}
@@ -357,7 +355,7 @@ function modernDayTable(e: WeekEntry, L: PdfLabels, locale: string, rowMm: numbe
 }
 
 function modernSheet(e: WeekEntry, p: Profile, L: PdfLabels, locale: string): string {
-  const daily = hasDays(e)
+  const daily = isDaily(e)
 
   const block = (heading: string, value: string, minMm: number): string => `
     <div class="block">
@@ -370,6 +368,7 @@ function modernSheet(e: WeekEntry, p: Profile, L: PdfLabels, locale: string): st
   let body: string
   if (daily) {
     const extras = [
+      { heading: L.blockCompany, value: e.company },
       { heading: L.blockUnits, value: e.instruction },
       { heading: L.blockSchool, value: e.school },
     ].filter((s) => s.value.trim().length > 0)
@@ -435,7 +434,7 @@ export function buildReportHtml(
     ? entries
         .map((e) => {
           if (layout === 'modern') return modernSheet(e, profile, L, locale)
-          return hasDays(e)
+          return isDaily(e)
             ? classicDaily(e, profile, L, locale)
             : classicWeekly(e, profile, L, locale)
         })

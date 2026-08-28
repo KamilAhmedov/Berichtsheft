@@ -5,6 +5,7 @@ import Database from 'better-sqlite3'
 import type {
   AppSnapshot,
   DayEntry,
+  EntryMode,
   EntryStatus,
   Profile,
   Settings,
@@ -108,6 +109,22 @@ function migrate(): void {
     db.exec(`ALTER TABLE entries ADD COLUMN days TEXT NOT NULL DEFAULT '[]'`)
     db.pragma('user_version = 2')
   }
+
+  if (version < 3) {
+    // Die Erfassungsart gehoert zur Woche, nicht zu den Einstellungen.
+    db.exec(`ALTER TABLE entries ADD COLUMN mode TEXT NOT NULL DEFAULT 'weekly'`)
+    // Bestehende Wochen einordnen: wo Tagestexte stehen, war es Tageserfassung.
+    const rows = db.prepare('SELECT id, days FROM entries').all() as Array<{
+      id: string
+      days: string
+    }>
+    const mark = db.prepare('UPDATE entries SET mode = ? WHERE id = ?')
+    for (const row of rows) {
+      const daily = parseDays(row.days).some((day) => day.text.trim().length > 0)
+      mark.run(daily ? 'daily' : 'weekly', row.id)
+    }
+    db.pragma('user_version = 3')
+  }
 }
 
 function seedDefaults(): void {
@@ -129,6 +146,23 @@ function getMeta<T>(key: string, fallback: T): T {
   }
 }
 
+/**
+ * Zeitpunkt der letzten inhaltlichen Aenderung. Die Sicherung braucht ihn,
+ * weil der Zeitstempel der Datenbankdatei im WAL-Modus stehen bleibt.
+ */
+function touch(): void {
+  db.prepare(
+    'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+  ).run('lastChangeAt', new Date().toISOString())
+}
+
+function lastChangeAt(): number {
+  const row = db.prepare('SELECT value FROM meta WHERE key = ?').get('lastChangeAt') as
+    | { value: string }
+    | undefined
+  return row ? Date.parse(row.value) : Number.NaN
+}
+
 function setMeta(key: string, value: unknown): void {
   db.prepare(
     'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
@@ -141,6 +175,7 @@ export function getProfile(): Profile {
 
 export function setProfile(profile: Profile): Profile {
   setMeta('profile', profile)
+  touch()
   return getProfile()
 }
 
@@ -150,6 +185,7 @@ export function getSettings(): Settings {
 
 export function setSettings(settings: Settings): Settings {
   setMeta('settings', settings)
+  touch()
   return getSettings()
 }
 
@@ -162,6 +198,7 @@ interface EntryRow {
   start_date: string
   end_date: string
   training_year: number
+  mode: string
   company: string
   school: string
   instruction: string
@@ -186,6 +223,7 @@ function parseDays(raw: string): DayEntry[] {
 function toRowParams(entry: WeekEntry, now: string) {
   return {
     ...entry,
+    mode: entry.mode ?? 'weekly',
     days: JSON.stringify(entry.days ?? []),
     createdAt: entry.createdAt || now,
     updatedAt: now,
@@ -200,6 +238,7 @@ function toEntry(r: EntryRow): WeekEntry {
     startDate: r.start_date,
     endDate: r.end_date,
     trainingYear: r.training_year,
+    mode: (r.mode as EntryMode) ?? 'weekly',
     company: r.company,
     school: r.school,
     instruction: r.instruction,
@@ -220,11 +259,11 @@ export function listEntries(): WeekEntry[] {
 
 const UPSERT_ENTRY = `
   INSERT INTO entries (
-    id, iso_year, iso_week, start_date, end_date, training_year,
+    id, iso_year, iso_week, start_date, end_date, training_year, mode,
     company, school, instruction,
     days, notes, status, created_at, updated_at
   ) VALUES (
-    @id, @isoYear, @isoWeek, @startDate, @endDate, @trainingYear,
+    @id, @isoYear, @isoWeek, @startDate, @endDate, @trainingYear, @mode,
     @company, @school, @instruction,
     @days, @notes, @status, @createdAt, @updatedAt
   )
@@ -234,6 +273,7 @@ const UPSERT_ENTRY = `
     start_date        = excluded.start_date,
     end_date          = excluded.end_date,
     training_year     = excluded.training_year,
+    mode              = excluded.mode,
     company           = excluded.company,
     school            = excluded.school,
     instruction       = excluded.instruction,
@@ -246,12 +286,14 @@ const UPSERT_ENTRY = `
 export function saveEntry(entry: WeekEntry): WeekEntry {
   const now = new Date().toISOString()
   db.prepare(UPSERT_ENTRY).run(toRowParams(entry, now))
+  touch()
   const row = db.prepare('SELECT * FROM entries WHERE id = ?').get(entry.id) as EntryRow
   return toEntry(row)
 }
 
 export function deleteEntry(id: string): void {
   db.prepare('DELETE FROM entries WHERE id = ?').run(id)
+  touch()
 }
 
 /* ------------------------------------------------------------ templates ---- */
@@ -267,11 +309,13 @@ export function saveTemplate(t: Template): Template {
     `INSERT INTO templates (id, title, field, text) VALUES (@id, @title, @field, @text)
      ON CONFLICT(id) DO UPDATE SET title = excluded.title, field = excluded.field, text = excluded.text`,
   ).run(t)
+  touch()
   return t
 }
 
 export function deleteTemplate(id: string): void {
   db.prepare('DELETE FROM templates WHERE id = ?').run(id)
+  touch()
 }
 
 /* -------------------------------------------------------------- backups ---- */
@@ -302,6 +346,7 @@ export function restore(data: AppSnapshot): AppSnapshot {
     setMeta('settings', d.settings)
   })
   run(data)
+  touch()
   return snapshot()
 }
 
@@ -328,7 +373,12 @@ export function rotateBackup(): void {
   const newest = existing[existing.length - 1]
   if (newest) {
     try {
-      if (statSync(dbPath).mtimeMs <= statSync(join(backupDir, newest)).mtimeMs) return
+      // Der Zeitstempel der Datenbankdatei taugt nicht als Massstab: im
+      // WAL-Modus laufen Schreibvorgaenge zunaechst in die -wal-Datei, die
+      // Hauptdatei bleibt unberuehrt. Deshalb der selbst gefuehrte Stand.
+      const changed = lastChangeAt()
+      const backedUp = statSync(join(backupDir, newest)).mtimeMs
+      if (Number.isFinite(changed) && changed <= backedUp) return
     } catch {
       /* Im Zweifel lieber sichern. */
     }
@@ -336,6 +386,9 @@ export function rotateBackup(): void {
 
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   try {
+    // Offene Transaktionen in die Hauptdatei schreiben, sonst fehlen der
+    // Kopie genau die zuletzt gespeicherten Wochen.
+    db.pragma('wal_checkpoint(TRUNCATE)')
     copyFileSync(dbPath, join(backupDir, `berichtsheft-${stamp}.db`))
   } catch {
     return // Ein fehlgeschlagenes Backup darf die App nie blockieren.

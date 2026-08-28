@@ -1,4 +1,4 @@
-import type { DayEntry, Profile, WeekEntry } from '../../shared/types'
+import type { DayEntry, EntryMode, Profile, WeekEntry } from '../../shared/types'
 import {
   addDays,
   fromISODate,
@@ -21,7 +21,12 @@ export function makeDays(monday: Date, count = 5): DayEntry[] {
 }
 
 /** Ein leerer Bericht für eine bestimmte Kalenderwoche. */
-export function makeEntry(isoYear: number, isoWeek: number, profile: Profile): WeekEntry {
+export function makeEntry(
+  isoYear: number,
+  isoWeek: number,
+  profile: Profile,
+  mode: EntryMode,
+): WeekEntry {
   const monday = isoWeekStart(isoYear, isoWeek)
   const sunday = addDays(monday, 6)
   const start = profile.startDate ? fromISODate(profile.startDate) : monday
@@ -32,6 +37,7 @@ export function makeEntry(isoYear: number, isoWeek: number, profile: Profile): W
     startDate: toISODate(monday),
     endDate: toISODate(sunday),
     trainingYear: trainingYearFor(monday, start, profile.durationYears),
+    mode,
     company: '',
     school: '',
     instruction: '',

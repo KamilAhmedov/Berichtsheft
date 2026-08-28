@@ -163,8 +163,10 @@ const de = {
 
   // Erfassungsart und Tageszeilen
   entryModeLabel: 'Erfassungsart',
+  entryModeDefault: 'Erfassungsart neuer Wochen',
   entryModeDaily: 'Täglich',
-  entryModeDailyHint: 'Eine Zeile pro Arbeitstag. Von vielen Betrieben im 1. Lehrjahr verlangt.',
+  entryModeDailyHint:
+    'Eine Zeile pro Arbeitstag. Von vielen Betrieben im 1. Lehrjahr verlangt. Jede Woche behält ihre eigene Erfassungsart.',
   entryModeWeekly: 'Wöchentlich',
   entryModeWeeklyHint: 'Ein Fließtext für die ganze Woche. Ab dem 2. Lehrjahr üblich.',
   dailySection: 'Tägliche Aufstellung',
@@ -196,6 +198,8 @@ const de = {
   hoursShort: 'Std.',
   hoursPerDay: 'Stunden je Wochentag',
   hoursPerDayHint: 'Erscheinen im PDF in der Stundenspalte neben den Wochentagen.',
+  carriedOverHint:
+    'Diese Texte stammen aus der Wochenerfassung. Sie erscheinen weiterhin im PDF — leer lassen, wenn sie nicht mehr gebraucht werden.',
 
 }
 
@@ -352,8 +356,10 @@ const en: Dict = {
   later: 'Later',
 
   entryModeLabel: 'Entry mode',
+  entryModeDefault: 'Entry mode for new weeks',
   entryModeDaily: 'Daily',
-  entryModeDailyHint: 'One row per working day. Required by many companies in year 1.',
+  entryModeDailyHint:
+    'One row per working day. Required by many companies in year 1. Every week keeps its own entry mode.',
   entryModeWeekly: 'Weekly',
   entryModeWeeklyHint: 'One block of prose for the whole week. Common from year 2 on.',
   dailySection: 'Day by day',
@@ -385,6 +391,8 @@ const en: Dict = {
   hoursShort: 'h',
   hoursPerDay: 'Hours per weekday',
   hoursPerDayHint: 'Printed in the hours column next to the weekdays.',
+  carriedOverHint:
+    'These texts come from the weekly entry mode. They still appear in the PDF — clear them if they are no longer needed.',
 
 }
 
@@ -539,8 +547,10 @@ const tr: Dict = {
   later: 'Sonra',
 
   entryModeLabel: 'Kayıt biçimi',
+  entryModeDefault: 'Yeni haftaların kayıt biçimi',
   entryModeDaily: 'Günlük',
-  entryModeDailyHint: 'Her iş günü için bir satır. Birçok firma 1. yılda bunu ister.',
+  entryModeDailyHint:
+    'Her iş günü için bir satır. Birçok firma 1. yılda bunu ister. Her hafta kendi kayıt biçimini korur.',
   entryModeWeekly: 'Haftalık',
   entryModeWeeklyHint: 'Tüm hafta için tek bir metin. 2. yıldan sonra yaygın.',
   dailySection: 'Gün gün',
@@ -572,6 +582,8 @@ const tr: Dict = {
   hoursShort: 'sa.',
   hoursPerDay: 'Gün başına saat',
   hoursPerDayHint: 'PDF çıktısında günlerin yanındaki saat sütununda görünür.',
+  carriedOverHint:
+    'Bu metinler haftalık kayıttan geliyor. PDF çıktısında görünmeye devam eder — gerekmiyorsa boşalt.',
 
 }
 

@@ -59,11 +59,11 @@ export function WeeksView({
     (isoYear: number, isoWeek: number) => {
       const existing = entries.find((e) => e.id === weekId(isoYear, isoWeek))
       setEditing({
-        entry: existing ?? makeEntry(isoYear, isoWeek, profile),
+        entry: existing ?? makeEntry(isoYear, isoWeek, profile, settings.entryMode),
         isNew: !existing,
       })
     },
-    [entries, profile],
+    [entries, profile, settings.entryMode],
   )
 
   // Ein Klick auf der Übersicht springt direkt in die passende Woche.

@@ -154,7 +154,7 @@ export function SettingsView() {
 
       <Card className="mb-4">
         <CardContent className="p-5">
-          <h2 className="mb-3 text-sm font-medium">{t('entryModeLabel')}</h2>
+          <h2 className="mb-3 text-sm font-medium">{t('entryModeDefault')}</h2>
           <div className="grid grid-cols-2 gap-3">
             {modes.map((mode) => (
               <button

@@ -30,9 +30,14 @@ step-by-step version.
 npm run typecheck
 npm run lint
 npm run build
+npm run selftest
 ```
 
-All three must pass; CI runs the same commands on every pull request.
+All four must pass; CI runs the same commands on every pull request.
+
+`npm run selftest` drives the real database and PDF modules against a throwaway
+profile in the temp directory — migrations, backups, export/import and the two
+PDF layouts. Your own data is never touched.
 
 If you touched the PDF templates, also run `npm run pdf:check`. It renders sample
 reports for every layout, language and entry mode into `release/pdf-check/` — as

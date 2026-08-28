@@ -8,7 +8,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react'
-import type { DayEntry, DayKind, EntryStatus, WeekEntry } from '../../shared/types'
+import type { DayEntry, DayKind, EntryMode, EntryStatus, WeekEntry } from '../../shared/types'
 import { addDays, formatDateRange, fromISODate, toISODate } from '../../shared/dates'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,6 +35,12 @@ import { makeDays, totalHours } from '@/lib/weeks'
 import { cn } from '@/lib/utils'
 
 type Field = 'company' | 'school' | 'instruction'
+
+const FIELD_LABELS = {
+  company: 'fieldCompany',
+  school: 'fieldSchool',
+  instruction: 'fieldInstruction',
+} as const
 
 /** An diesen Tagen wird nichts geleistet — Text und Stunden werden gesperrt. */
 const ABSENCE: DayKind[] = ['vacation', 'sick', 'holiday', 'off']
@@ -277,7 +283,7 @@ export function WeekEditor({
 
   React.useEffect(() => setDraft(entry), [entry])
 
-  const daily = settings.entryMode === 'daily'
+  const daily = draft.mode === 'daily'
   const dirty = JSON.stringify(draft) !== JSON.stringify(entry)
   const total = totalHours(draft)
 
@@ -285,6 +291,12 @@ export function WeekEditor({
     setDraft((d) => ({ ...d, [key]: value }))
 
   const days = draft.days?.length ? draft.days : makeDays(fromISODate(draft.startDate))
+
+  // Wochentexte, die aus einer früheren Wochenerfassung stammen. Im Tagesmodus
+  // bleiben sie sichtbar und bearbeitbar, damit nichts unerreichbar wird.
+  const carriedOver: Field[] = daily
+    ? (['company', 'school', 'instruction'] as Field[]).filter((f) => draft[f].trim().length > 0)
+    : []
 
   function updateDay(index: number, day: DayEntry) {
     set(
@@ -450,6 +462,22 @@ export function WeekEditor({
                 </Select>
               </div>
 
+              <div className="w-40 space-y-2">
+                <Label>{t('entryModeLabel')}</Label>
+                <Select
+                  value={draft.mode}
+                  onValueChange={(v) => set('mode', v as EntryMode)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">{t('entryModeDaily')}</SelectItem>
+                    <SelectItem value="weekly">{t('entryModeWeekly')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <Button variant="outline" size="sm" onClick={copyPrevious} className="mb-px">
                 <CopyPlus />
                 {t('copyPrevious')}
@@ -477,6 +505,21 @@ export function WeekEditor({
                     onChange={(next) => updateDay(index, next)}
                   />
                 ))}
+
+                {carriedOver.length > 0 && (
+                  <div className="space-y-5 rounded-lg border border-dashed p-4">
+                    <p className="text-xs text-muted-foreground">{t('carriedOverHint')}</p>
+                    {carriedOver.map((field) => (
+                      <ReportField
+                        key={field}
+                        field={field}
+                        label={t(FIELD_LABELS[field])}
+                        value={draft[field]}
+                        onChange={(v) => set(field, v)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-5">
