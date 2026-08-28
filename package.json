@@ -1,6 +1,6 @@
 {
   "name": "berichtsheft",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Ausbildungsnachweis (Berichtsheft) als Desktop-App — offline, ohne Konto, mit PDF-Export.",
   "author": "Kamil Ahmedov",
   "license": "MIT",

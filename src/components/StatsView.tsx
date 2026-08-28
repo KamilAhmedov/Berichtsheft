@@ -18,8 +18,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { PageHeader } from '@/components/Shell'
 import { useApp } from '@/hooks/useApp'
 import { useChartColors, type ChartColors } from '@/hooks/useChartColors'
-import { isEmptyEntry, totalHours } from '@/lib/weeks'
-import { fromISODate } from '../../shared/dates'
+import { currentWeek, isEmptyEntry, plannedWeeks, totalHours } from '@/lib/weeks'
+import { fromISODate, isoWeekStart, weekId } from '../../shared/dates'
 
 /* --------------------------------------------------------------- Bausteine */
 
@@ -35,12 +35,21 @@ function Figure({ label, value, hint }: { label: string; value: string; hint?: s
   )
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({
+  title,
+  hint,
+  children,
+}: {
+  title: string
+  hint?: string
+  children: React.ReactNode
+}) {
   return (
     <Card>
       <CardContent className="p-5">
-        <h2 className="mb-4 text-sm font-medium">{title}</h2>
-        {children}
+        <h2 className="text-sm font-medium">{title}</h2>
+        {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
+        <div className="mt-4">{children}</div>
       </CardContent>
     </Card>
   )
@@ -145,7 +154,7 @@ function Donut({
 /* ------------------------------------------------------------------ Ansicht */
 
 export function StatsView() {
-  const { t, locale, entries } = useApp()
+  const { t, locale, entries, profile } = useApp()
   const colors = useChartColors()
 
   const filled = React.useMemo(() => entries.filter((e) => !isEmptyEntry(e)), [entries])
@@ -174,21 +183,11 @@ export function StatsView() {
     return out
   }, [filled, locale])
 
-  /** Aufsummierte Wochen über die Zeit — zeigt, ob man drangeblieben ist. */
-  const cumulative = React.useMemo(() => {
-    let sum = 0
-    return filled.map((entry) => {
-      sum += 1
-      return {
-        label: `KW ${String(entry.isoWeek).padStart(2, '0')}`,
-        weeks: sum,
-      }
-    })
-  }, [filled])
-
   const kindData = React.useMemo(() => {
     const counts = new Map<DayKind, number>()
-    for (const entry of filled) {
+    // In der Wochenerfassung wird die Tagesart nie gepflegt; sie stünde dort
+    // pauschal auf "Betrieb" und würde die Verteilung verfälschen.
+    for (const entry of filled.filter((e) => e.mode === 'daily')) {
       for (const day of entry.days ?? []) counts.set(day.kind, (counts.get(day.kind) ?? 0) + 1)
     }
     const spec: Array<[DayKind, string, string]> = [
@@ -215,17 +214,39 @@ export function StatsView() {
     }))
   }, [entries, t, colors])
 
-  /** Längste ununterbrochene Folge ausgefüllter Wochen. */
-  const longestRun = React.useMemo(() => {
-    const ids = new Set(filled.map((e) => e.id))
-    let best = 0
-    let run = 0
-    for (const entry of entries) {
-      run = ids.has(entry.id) ? run + 1 : 0
-      best = Math.max(best, run)
+  /**
+   * Wie viele Wochen bereits vergangen sind und wie viele davon geschrieben
+   * wurden. Grundlage ist der Kalender, nicht die Liste der Einträge — sonst
+   * bleiben ausgelassene Wochen unsichtbar.
+   */
+  const pace = React.useMemo(() => {
+    const planned = plannedWeeks(profile)
+    const current = weekId(currentWeek().isoYear, currentWeek().isoWeek)
+    const written = new Set(filled.map((e) => e.id))
+    const points: Array<{ label: string; written: number; elapsed: number }> = []
+
+    let count = 0
+    let elapsed = 0
+    let lastMonth = ''
+    for (const week of planned) {
+      const id = weekId(week.isoYear, week.isoWeek)
+      if (id > current) break
+      elapsed += 1
+      if (written.has(id)) count += 1
+      // Nur beim Monatswechsel beschriften, sonst steht derselbe Monat mehrfach da.
+      const month = isoWeekStart(week.isoYear, week.isoWeek).toLocaleDateString(locale, {
+        month: 'short',
+        year: '2-digit',
+      })
+      points.push({
+        label: month === lastMonth ? '' : month,
+        written: count,
+        elapsed,
+      })
+      lastMonth = month
     }
-    return best
-  }, [entries, filled])
+    return { points, elapsed, missing: Math.max(elapsed - count, 0) }
+  }, [profile, filled, locale])
 
   const totalHoursSum = filled.reduce((sum, e) => sum + totalHours(e), 0)
   const average = filled.length ? totalHoursSum / filled.length : 0
@@ -254,9 +275,17 @@ export function StatsView() {
 
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Figure label={t('statHoursTotal')} value={number(totalHoursSum)} />
-        <Figure label={t('statWeeksFilled')} value={String(filled.length)} />
+        <Figure
+          label={t('statWeeksFilled')}
+          value={String(filled.length)}
+          hint={
+            pace.elapsed
+              ? t('statsOfElapsed').replace('{n}', String(pace.elapsed))
+              : undefined
+          }
+        />
         <Figure label={t('statsAverage')} value={`${number(average)} ${t('hoursShort')}`} />
-        <Figure label={t('statsLongest')} value={`${longestRun} ${t('statsWeeks')}`} />
+        <Figure label={t('statWeeksMissing')} value={String(pace.missing)} />
       </div>
 
       <div className="mb-4">
@@ -286,7 +315,8 @@ export function StatsView() {
       </div>
 
       <div className="mb-4 grid gap-4 lg:grid-cols-2">
-        <Panel title={t('statsByKind')}>
+        {totalDays > 0 && (
+        <Panel title={t('statsByKind')} hint={t('statsDailyOnly')}>
           <Donut
             data={kindData}
             colors={colors}
@@ -295,6 +325,7 @@ export function StatsView() {
             unit={t('statsDays')}
           />
         </Panel>
+        )}
 
         <Panel title={t('statsByStatus')}>
           <Donut
@@ -307,11 +338,11 @@ export function StatsView() {
         </Panel>
       </div>
 
-      {cumulative.length > 1 && (
-        <Panel title={t('statsProgressOverTime')}>
+      {pace.points.length > 1 && (
+        <Panel title={t('statsPace')} hint={t('statsPaceHint')}>
           <div className="h-[190px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cumulative} margin={{ top: 4, right: 4, bottom: 0, left: -18 }}>
+              <AreaChart data={pace.points} margin={{ top: 4, right: 4, bottom: 0, left: -18 }}>
                 <defs>
                   <linearGradient id="runGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={colors.primary} stopOpacity={0.35} />
@@ -319,13 +350,23 @@ export function StatsView() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke={colors.border} vertical={false} />
-                <XAxis dataKey="label" {...axis} axisLine={{ stroke: colors.border }} />
+                <XAxis dataKey="label" {...axis} axisLine={{ stroke: colors.border }} interval={0} />
                 <YAxis {...axis} axisLine={false} width={44} allowDecimals={false} />
                 <Tooltip content={<ChartTooltip unit={t('statsWeeks')} />} />
                 <Area
                   type="monotone"
-                  dataKey="weeks"
-                  name={t('statWeeksFilled')}
+                  dataKey="elapsed"
+                  name={t('statsElapsed')}
+                  stroke={colors.border}
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                  fill="none"
+                  isAnimationActive={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="written"
+                  name={t('statsWritten')}
                   stroke={colors.primary}
                   strokeWidth={2}
                   fill="url(#runGradient)"

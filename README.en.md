@@ -96,8 +96,8 @@ Two files are published under [**Releases**](https://github.com/KamilAhmedov/Ber
 
 | File | Purpose |
 | --- | --- |
-| `Berichtsheft-Setup-1.0.0.exe` | Regular installer with Start menu and desktop shortcuts |
-| `Berichtsheft-1.0.0-portable.exe` | No installation — double-click to run, works from a USB stick |
+| `Berichtsheft-Setup-1.1.0.exe` | Regular installer with Start menu and desktop shortcuts |
+| `Berichtsheft-1.1.0-portable.exe` | No installation — double-click to run, works from a USB stick |
 
 > **About the Windows SmartScreen warning**
 > The installers are not signed with a paid certificate, so Windows shows

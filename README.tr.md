@@ -98,8 +98,8 @@ kaydet, diğer bilgisayarda **Verileri içe aktar** ile o dosyayı seç. Hepsi b
 
 | Dosya | Ne işe yarar |
 | --- | --- |
-| `Berichtsheft-Setup-1.0.0.exe` | Normal kurulum — Başlat menüsüne ve masaüstüne kısayol ekler |
-| `Berichtsheft-1.0.0-portable.exe` | Kurulumsuz — çift tıkla çalışır, USB bellekten bile açılır |
+| `Berichtsheft-Setup-1.1.0.exe` | Normal kurulum — Başlat menüsüne ve masaüstüne kısayol ekler |
+| `Berichtsheft-1.1.0-portable.exe` | Kurulumsuz — çift tıkla çalışır, USB bellekten bile açılır |
 
 > **Windows SmartScreen uyarısı hakkında**
 > Dosyalar ücretli bir sertifikayla imzalanmadığı için Windows ilk açılışta

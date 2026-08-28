@@ -98,6 +98,15 @@
     background-clip: content-box;
   }
 
+  /*
+   * Recharts hängt den Tooltip als Geschwister neben das Diagramm. Ohne
+   * eigenen z-index verschwindet er hinter allem, was danach im Markup
+   * steht — etwa hinter der Beschriftung in der Mitte der Ringdiagramme.
+   */
+  .recharts-tooltip-wrapper {
+    z-index: 30;
+  }
+
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }

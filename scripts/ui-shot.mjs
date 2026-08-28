@@ -194,6 +194,46 @@ app.whenReady().then(async () => {
     log.push('OK ' + name)
   }
 
+  // Der Tooltip eines Ringdiagramms — er darf nicht hinter der Beschriftung
+  // in der Mitte verschwinden.
+  const onStats = await win.webContents.executeJavaScript(
+    "(() => { const nav = [...document.querySelectorAll('nav button')]" +
+      ".find((b) => b.textContent.trim() === 'Statistik');" +
+      " if (!nav) return false; nav.click(); return true; })()",
+  )
+  if (onStats) {
+    await new Promise((r) => setTimeout(r, 1200))
+    // Erst nach unten rollen, sonst liegen die Ringdiagramme ausserhalb des Bildes.
+    await win.webContents.executeJavaScript(
+      "(() => { const m = document.querySelector('main');" +
+        " if (m) m.scrollTop = m.scrollHeight; return true; })()",
+    )
+    await new Promise((r) => setTimeout(r, 700))
+
+    // Recharts reagiert nur auf echte Zeigereingaben, nicht auf per Skript
+    // ausgeloeste Ereignisse — deshalb der Umweg ueber sendInputEvent.
+    const spot = await win.webContents.executeJavaScript(
+      "(() => { const s = document.querySelector('.recharts-sector');" +
+        " if (!s) return null;" +
+        " const r = s.getBoundingClientRect();" +
+        " return { x: Math.round(r.x + r.width * 0.2), y: Math.round(r.y + r.height * 0.2) }; })()",
+    )
+    if (spot) {
+      win.webContents.sendInputEvent({ type: 'mouseMove', x: spot.x, y: spot.y })
+      await new Promise((r) => setTimeout(r, 300))
+      win.webContents.sendInputEvent({ type: 'mouseMove', x: spot.x + 1, y: spot.y + 1 })
+    }
+    const hovered = Boolean(spot)
+    if (hovered) {
+      await new Promise((r) => setTimeout(r, 1200))
+      const shot = await win.webContents.capturePage()
+      writeFileSync(join(OUT, 'statistik-tooltip' + (DARK ? '-dunkel' : '') + '.png'), shot.toPNG())
+      log.push('OK statistik-tooltip.png')
+    } else {
+      log.push('NICHT GEFUNDEN: Ringsegment')
+    }
+  }
+
   // Zusaetzlich der Dialog mit den Sicherungen — nur ueber einen Knopf erreichbar.
   const opened = await win.webContents.executeJavaScript(
     "(() => { const b = [...document.querySelectorAll('button')]" +

@@ -100,8 +100,8 @@ Unter [**Releases**](https://github.com/KamilAhmedov/Berichtsheft/releases) lieg
 
 | Datei | Wofür |
 | --- | --- |
-| `Berichtsheft-Setup-1.0.0.exe` | Normale Installation mit Startmenü-Eintrag und Desktop-Verknüpfung |
-| `Berichtsheft-1.0.0-portable.exe` | Ohne Installation — Doppelklick genügt, läuft auch vom USB-Stick |
+| `Berichtsheft-Setup-1.1.0.exe` | Normale Installation mit Startmenü-Eintrag und Desktop-Verknüpfung |
+| `Berichtsheft-1.1.0-portable.exe` | Ohne Installation — Doppelklick genügt, läuft auch vom USB-Stick |
 
 > **Hinweis zu Windows SmartScreen**
 > Die Installer sind nicht mit einem kostenpflichtigen Zertifikat signiert. Windows zeigt
