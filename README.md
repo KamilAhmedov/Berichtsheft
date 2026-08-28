@@ -38,19 +38,27 @@ Knopfdruck ein PDF im IHK-Stil.
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/01-uebersicht.png" alt="Übersicht mit Fortschritt und offenen Wochen"></td>
-    <td width="50%"><img src="docs/screenshots/02-wochenbericht.png" alt="Wochenbericht in der täglichen Erfassung"></td>
+    <td width="50%"><img src="docs/screenshots/02-wochenliste.png" alt="Liste aller Wochenberichte mit Suche und Filtern"></td>
   </tr>
   <tr>
     <td align="center"><sub>Übersicht — Fortschritt, aktuelle Woche und offene Wochen</sub></td>
+    <td align="center"><sub>Wochen — alle Berichte mit Suche, Filtern und Status</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/03-wochenbericht.png" alt="Wochenbericht in der täglichen Erfassung"></td>
+    <td width="50%"><img src="docs/screenshots/04-einstellungen.png" alt="Einstellungen im dunklen Design"></td>
+  </tr>
+  <tr>
     <td align="center"><sub>Wochenbericht — tägliche Erfassung mit Textbausteinen</sub></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/03-einstellungen.png" alt="Einstellungen im dunklen Design"></td>
-    <td width="50%"><img src="docs/screenshots/04-pdf.png" alt="PDF-Ausgabe im IHK-Stil"></td>
-  </tr>
-  <tr>
     <td align="center"><sub>Einstellungen — dunkles Design, Sprache, Datenablage</sub></td>
-    <td align="center"><sub>PDF-Ausgabe — klassisches Layout nach IHK-Vordruck</sub></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <img src="docs/screenshots/05-pdf.png" alt="PDF-Ausgabe im klassischen Layout" width="49%">
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><sub>PDF-Ausgabe — eine Seite je Woche im klassischen Layout</sub></td>
   </tr>
 </table>
 

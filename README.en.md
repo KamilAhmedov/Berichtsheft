@@ -34,19 +34,27 @@ produces a PDF in the classic IHK style.
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/01-uebersicht.png" alt="Overview with progress and open weeks"></td>
-    <td width="50%"><img src="docs/screenshots/02-wochenbericht.png" alt="Weekly report in daily entry mode"></td>
+    <td width="50%"><img src="docs/screenshots/02-wochenliste.png" alt="List of all weekly reports with search and filters"></td>
   </tr>
   <tr>
     <td align="center"><sub>Overview — progress, current week and open weeks</sub></td>
+    <td align="center"><sub>Weeks — every report with search, filters and status</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/03-wochenbericht.png" alt="Weekly report in daily entry mode"></td>
+    <td width="50%"><img src="docs/screenshots/04-einstellungen.png" alt="Settings in dark theme"></td>
+  </tr>
+  <tr>
     <td align="center"><sub>Weekly report — daily entry with snippets</sub></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/03-einstellungen.png" alt="Settings in dark theme"></td>
-    <td width="50%"><img src="docs/screenshots/04-pdf.png" alt="PDF output in IHK style"></td>
-  </tr>
-  <tr>
     <td align="center"><sub>Settings — dark theme, language, data location</sub></td>
-    <td align="center"><sub>PDF output — classic layout following the IHK form</sub></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <img src="docs/screenshots/05-pdf.png" alt="PDF output in the classic layout" width="49%">
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><sub>PDF output — one page per week in the classic layout</sub></td>
   </tr>
 </table>
 

@@ -33,19 +33,27 @@ otomatik hesaplanır, eksik haftalar gösterilir, tek tuşla IHK tarzı PDF üre
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/01-uebersicht.png" alt="Genel bakış: ilerleme ve açık haftalar"></td>
-    <td width="50%"><img src="docs/screenshots/02-wochenbericht.png" alt="Günlük kayıt biçiminde haftalık rapor"></td>
+    <td width="50%"><img src="docs/screenshots/02-wochenliste.png" alt="Bütün haftalık raporların listesi, arama ve filtreler"></td>
   </tr>
   <tr>
     <td align="center"><sub>Genel bakış — ilerleme, bu hafta ve açık haftalar</sub></td>
+    <td align="center"><sub>Haftalar — arama, filtre ve durum rozetleriyle bütün raporlar</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/03-wochenbericht.png" alt="Günlük kayıt biçiminde haftalık rapor"></td>
+    <td width="50%"><img src="docs/screenshots/04-einstellungen.png" alt="Koyu temada ayarlar"></td>
+  </tr>
+  <tr>
     <td align="center"><sub>Haftalık rapor — hazır metinlerle günlük kayıt</sub></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/03-einstellungen.png" alt="Koyu temada ayarlar"></td>
-    <td width="50%"><img src="docs/screenshots/04-pdf.png" alt="IHK tarzında PDF çıktısı"></td>
-  </tr>
-  <tr>
     <td align="center"><sub>Ayarlar — koyu tema, dil, veri konumu</sub></td>
-    <td align="center"><sub>PDF çıktısı — IHK formuna uygun klasik düzen</sub></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <img src="docs/screenshots/05-pdf.png" alt="Klasik düzende PDF çıktısı" width="49%">
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><sub>PDF çıktısı — klasik düzende, her hafta bir sayfa</sub></td>
   </tr>
 </table>
 

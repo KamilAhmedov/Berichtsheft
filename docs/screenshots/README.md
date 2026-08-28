@@ -1,14 +1,15 @@
 # Bildschirmfotos / Screenshots / Ekran görüntüleri
 
-Vier Aufnahmen werden in den README-Dateien eingebunden. Dateinamen bitte genau so
+Fünf Aufnahmen werden in den README-Dateien eingebunden. Dateinamen bitte genau so
 verwenden, sonst bleiben die Bilder leer.
 
 | Datei | Was drauf sein soll |
 | --- | --- |
-| `01-uebersicht.png` | Reiter **Übersicht** — mit ausgefülltem Profil, ein paar Wochen, sichtbarem Fortschrittsbalken und ein bis zwei offenen Wochen |
-| `02-wochenbericht.png` | Ein geöffneter **Wochenbericht** in der täglichen Erfassung, mit ausgefüllten Tageszeilen und mindestens einem Textbaustein |
-| `03-einstellungen.png` | Reiter **Einstellungen** im **dunklen Design** — zeigt Sprache, Erfassungsart, PDF-Layout und Speicherort |
-| `04-pdf.png` | Die **PDF-Ausgabe** im klassischen Layout, geöffnet in einem PDF-Betrachter |
+| `01-uebersicht.png` | Reiter **Übersicht** — ausgefülltes Profil, mehrere Wochen, sichtbarer Fortschrittsbalken und ein paar offene Wochen |
+| `02-wochenliste.png` | Reiter **Wochen** — die Liste selbst, mit Suchfeld, Filtern und Status-Kennzeichen in mehreren Farben |
+| `03-wochenbericht.png` | Ein geöffneter **Wochenbericht** in der täglichen Erfassung, mit gefüllten Tageszeilen, einem Abwesenheitstag und Textbausteinen |
+| `04-einstellungen.png` | Reiter **Einstellungen** im **dunklen Design** — Sprache, Erfassungsart, PDF-Layout und Speicherort |
+| `05-pdf.png` | Die **PDF-Ausgabe** im klassischen Layout, geöffnet in einem PDF-Betrachter |
 
 ## Aufnehmen
 
@@ -18,7 +19,7 @@ verwenden, sonst bleiben die Bilder leer.
 3. **Windows-Taste + Umschalt + S**, Fenster auswählen, Ausschnitt kopieren.
    Alternativ das Snipping Tool oder **Alt + Druck** für das aktive Fenster.
 4. Als PNG in diesem Ordner speichern, mit genau den Namen aus der Tabelle.
-5. Für `04-pdf.png` ein PDF aus der App erzeugen, öffnen und die erste Seite
+5. Für `05-pdf.png` ein PDF aus der App erzeugen, öffnen und die erste Seite
    aufnehmen.
 
 Breite von etwa 1200 px reicht völlig; größere Bilder blähen das Repository nur auf.
