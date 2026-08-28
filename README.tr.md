@@ -53,7 +53,7 @@ otomatik hesaplanır, eksik haftalar gösterilir, tek tuşla IHK tarzı PDF üre
   </tr>
   <tr>
     <td align="center"><sub>PDF — klasik düzen, IHK formunu esas alır</sub></td>
-    <td align="center"><sub>PDF — modern düzen, aynı içerik</sub></td>
+    <td align="center"><sub>PDF — modern düzen, net tipografi</sub></td>
   </tr>
 </table>
 

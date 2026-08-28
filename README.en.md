@@ -54,7 +54,7 @@ produces a PDF in the classic IHK style.
   </tr>
   <tr>
     <td align="center"><sub>PDF — classic layout, following the IHK form</sub></td>
-    <td align="center"><sub>PDF — modern layout, the same content</sub></td>
+    <td align="center"><sub>PDF — modern layout, clearer typography</sub></td>
   </tr>
 </table>
 

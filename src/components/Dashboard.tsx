@@ -48,6 +48,15 @@ function Stat({
   )
 }
 
+/**
+ * Der Vorname für die Begrüßung. Viele schreiben sich im Nachweis als
+ * „Nachname, Vorname“ — dann steht der Vorname hinter dem Komma, sonst vorn.
+ */
+function firstName(fullName: string): string {
+  const [last, first] = fullName.split(',')
+  return (first ?? last).trim().split(/\s+/)[0] ?? ''
+}
+
 export function Dashboard({
   onNavigate,
   onOpenWeek,
@@ -85,7 +94,7 @@ export function Dashboard({
       <PageHeader
         title={
           profile.fullName
-            ? `${t('dashboardHello')}, ${profile.fullName.split(' ')[0]}`
+            ? `${t('dashboardHello')}, ${firstName(profile.fullName)}`
             : t('dashboardHelloAnon')
         }
         description={profile.occupation || undefined}

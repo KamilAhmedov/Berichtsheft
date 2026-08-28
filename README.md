@@ -58,7 +58,7 @@ Knopfdruck ein PDF im IHK-Stil.
   </tr>
   <tr>
     <td align="center"><sub>PDF — klassisches Layout, an den IHK-Vordruck angelehnt</sub></td>
-    <td align="center"><sub>PDF — modernes Layout, dieselben Angaben</sub></td>
+    <td align="center"><sub>PDF — modernes Layout, klare Typografie</sub></td>
   </tr>
 </table>
 
