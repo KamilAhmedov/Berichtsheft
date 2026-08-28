@@ -1,6 +1,13 @@
 import * as React from 'react'
-import { Database, Download, FolderOpen, Upload } from 'lucide-react'
-import type { EntryMode, Language, PdfLayout, StorageInfo, Theme } from '../../shared/types'
+import { Database, Download, FolderOpen, History, RotateCcw, Upload } from 'lucide-react'
+import type {
+  BackupInfo,
+  EntryMode,
+  Language,
+  PdfLayout,
+  StorageInfo,
+  Theme,
+} from '../../shared/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -49,6 +56,8 @@ export function SettingsView() {
   const { t, locale, settings, saveSettings, applySnapshot, toast } = useApp()
   const [info, setInfo] = React.useState<StorageInfo | null>(null)
   const [confirmImport, setConfirmImport] = React.useState(false)
+  const [backups, setBackups] = React.useState<BackupInfo[] | null>(null)
+  const [pendingRestore, setPendingRestore] = React.useState<BackupInfo | null>(null)
   const [busy, setBusy] = React.useState(false)
 
   const refreshInfo = React.useCallback(() => {
@@ -90,6 +99,28 @@ export function SettingsView() {
     } catch (error) {
       const message = error instanceof Error ? error.message : ''
       toast(message === 'INVALID_BACKUP' ? t('errorInvalidBackup') : message, 'error')
+    }
+    setBusy(false)
+    refreshInfo()
+  }
+
+  async function openBackups() {
+    try {
+      setBackups(await window.api.listBackups())
+    } catch (error) {
+      toast(error instanceof Error ? error.message : t('errorGeneric'), 'error')
+    }
+  }
+
+  async function handleRestore(backup: BackupInfo) {
+    setPendingRestore(null)
+    setBusy(true)
+    try {
+      applySnapshot(await window.api.restoreBackup(backup.file))
+      toast(t('backupsRestored'))
+      setBackups(null)
+    } catch (error) {
+      toast(error instanceof Error ? error.message : t('errorGeneric'), 'error')
     }
     setBusy(false)
     refreshInfo()
@@ -217,9 +248,19 @@ export function SettingsView() {
                 <span className="text-muted-foreground">{t('dataSize')}</span>
                 <span>{formatBytes(info.dbSizeBytes)}</span>
               </div>
-              <div className="flex justify-between gap-4">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">{t('dataBackups')}</span>
-                <span>{info.backupCount}</span>
+                <span className="flex items-center gap-2">
+                  {info.backupCount}
+                  {info.backupCount > 0 && (
+                    <button
+                      onClick={openBackups}
+                      className="text-primary underline-offset-2 hover:underline"
+                    >
+                      {t('showBackups')}
+                    </button>
+                  )}
+                </span>
               </div>
             </div>
           )}
@@ -286,6 +327,74 @@ export function SettingsView() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={backups !== null} onOpenChange={(open) => !open && setBackups(null)}>
+        <DialogContent className="max-h-[80vh] max-w-lg overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-4 w-4" />
+              {t('backupsTitle')}
+            </DialogTitle>
+            <DialogDescription>{t('backupsIntro')}</DialogDescription>
+          </DialogHeader>
+
+          {backups?.length ? (
+            <div className="space-y-2">
+              {backups.map((backup) => (
+                <div
+                  key={backup.file}
+                  className="flex items-center gap-3 rounded-lg border p-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium">
+                      {backup.createdAt
+                        ? new Date(backup.createdAt).toLocaleString(locale, {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : backup.file}
+                    </div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {backup.entryCount} {t('backupsWeeks')} · {formatBytes(backup.sizeBytes)}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => setPendingRestore(backup)}
+                  >
+                    <RotateCcw />
+                    {t('backupsRestore')}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="py-6 text-center text-sm text-muted-foreground">{t('backupsEmpty')}</p>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={pendingRestore !== null} onOpenChange={(open) => !open && setPendingRestore(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('backupsConfirmTitle')}</DialogTitle>
+            <DialogDescription>{t('backupsConfirmText')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingRestore(null)}>
+              {t('cancel')}
+            </Button>
+            <Button onClick={() => pendingRestore && handleRestore(pendingRestore)}>
+              {t('backupsRestore')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={confirmImport} onOpenChange={setConfirmImport}>
         <DialogContent className="max-w-md">

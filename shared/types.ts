@@ -100,6 +100,17 @@ export interface AppSnapshot {
   templates: Template[]
 }
 
+/** Eine automatische Sicherung, wie sie im Ordner liegt. */
+export interface BackupInfo {
+  /** Dateiname, dient zugleich als Kennung beim Zurueckspielen. */
+  file: string
+  /** Zeitpunkt der Sicherung, ISO-8601. */
+  createdAt: string
+  sizeBytes: number
+  /** Wie viele Wochen darin stehen — hilft beim Auswaehlen. */
+  entryCount: number
+}
+
 export interface StorageInfo {
   dataDir: string
   dbPath: string

@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import Database from 'better-sqlite3'
 import type {
   AppSnapshot,
+  BackupInfo,
   DayEntry,
   EntryMode,
   EntryStatus,
@@ -401,6 +402,80 @@ export function rotateBackup(): void {
     } catch {
       /* ignorieren */
     }
+  }
+}
+
+/**
+ * Die vorhandenen Sicherungen mit Datum, Groesse und Anzahl der Wochen.
+ * Jede Datei wird kurz lesend geoeffnet — bei zehn kleinen Dateien kostet
+ * das nichts und erspart das Raten beim Zurueckspielen.
+ */
+export function listBackups(): BackupInfo[] {
+  return backupFiles()
+    .map((file): BackupInfo => {
+      const path = join(backupDir, file)
+      let entryCount = 0
+      try {
+        const copy = new Database(path, { readonly: true })
+        const row = copy.prepare('SELECT COUNT(*) AS n FROM entries').get() as { n: number }
+        entryCount = row?.n ?? 0
+        copy.close()
+      } catch {
+        entryCount = 0 // Eine unlesbare Sicherung soll die Liste nicht sprengen.
+      }
+      let sizeBytes = 0
+      let createdAt = ''
+      try {
+        const stat = statSync(path)
+        sizeBytes = stat.size
+        createdAt = stat.mtime.toISOString()
+      } catch {
+        /* Datei ist verschwunden — dann bleibt es bei den Vorgaben. */
+      }
+      return { file, createdAt, sizeBytes, entryCount }
+    })
+    .reverse() // neueste zuerst
+}
+
+/**
+ * Spielt eine Sicherung zurueck. Der aktuelle Stand wird vorher gesichert,
+ * damit auch ein versehentliches Zurueckspielen umkehrbar bleibt.
+ */
+export function restoreBackup(file: string): AppSnapshot {
+  // Nur Dateien aus dem eigenen Ordner, keine Pfadangaben von aussen.
+  if (!backupFiles().includes(file)) throw new Error('UNKNOWN_BACKUP')
+
+  const copy = new Database(join(backupDir, file), { readonly: true })
+  try {
+    const rows = copy
+      .prepare('SELECT * FROM entries ORDER BY iso_year ASC, iso_week ASC')
+      .all() as EntryRow[]
+    const templates = copy
+      .prepare('SELECT id, title, field, text FROM templates ORDER BY title')
+      .all() as Template[]
+    const metaRows = copy.prepare('SELECT key, value FROM meta').all() as Array<{
+      key: string
+      value: string
+    }>
+    const meta = new Map(metaRows.map((r) => [r.key, r.value]))
+    const parse = <T>(key: string, fallback: T): T => {
+      const raw = meta.get(key)
+      if (!raw) return fallback
+      try {
+        return { ...fallback, ...(JSON.parse(raw) as object) } as T
+      } catch {
+        return fallback
+      }
+    }
+
+    return restore({
+      entries: rows.map(toEntry),
+      templates,
+      profile: parse('profile', DEFAULT_PROFILE),
+      settings: parse('settings', DEFAULT_SETTINGS),
+    })
+  } finally {
+    copy.close()
   }
 }
 

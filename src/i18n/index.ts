@@ -198,6 +198,31 @@ const de = {
   hoursShort: 'Std.',
   hoursPerDay: 'Stunden je Wochentag',
   hoursPerDayHint: 'Erscheinen im PDF in der Stundenspalte neben den Wochentagen.',
+// Sicherungen und Statistik
+  navStats: 'Statistik',
+  showBackups: 'Sicherungen anzeigen',
+  backupsTitle: 'Automatische Sicherungen',
+  backupsIntro:
+    'Die App sichert den Stand bei jedem Start, sofern sich etwas geändert hat. Beim Zurückspielen wird der aktuelle Stand zuvor gesichert.',
+  backupsEmpty: 'Es gibt noch keine Sicherung.',
+  backupsWeeks: 'Wochen',
+  backupsRestore: 'Zurückspielen',
+  backupsConfirmTitle: 'Sicherung zurückspielen?',
+  backupsConfirmText:
+    'Der aktuelle Bestand wird durch diese Sicherung ersetzt. Vorher legt die App eine weitere Sicherung an, der Schritt lässt sich also umkehren.',
+  backupsRestored: 'Sicherung zurückgespielt',
+
+  statsTitle: 'Statistik',
+  statsIntro: 'Was in den Berichten steckt — auf einen Blick.',
+  statsHoursPerMonth: 'Stunden je Monat',
+  statsByKind: 'Verteilung der Tage',
+  statsByStatus: 'Wochen nach Status',
+  statsAverage: 'Durchschnitt je ausgefüllter Woche',
+  statsLongest: 'Längste Strecke ohne Lücke',
+  statsNoData: 'Sobald die ersten Wochen erfasst sind, steht hier etwas.',
+  statsWeeks: 'Wochen',
+  statsDays: 'Tage',
+  statsProgressOverTime: 'Ausgefüllte Wochen im Verlauf',
   carriedOverHint:
     'Diese Texte stammen aus der Wochenerfassung. Sie erscheinen weiterhin im PDF — leer lassen, wenn sie nicht mehr gebraucht werden.',
 
@@ -391,6 +416,30 @@ const en: Dict = {
   hoursShort: 'h',
   hoursPerDay: 'Hours per weekday',
   hoursPerDayHint: 'Printed in the hours column next to the weekdays.',
+navStats: 'Statistics',
+  showBackups: 'Show backups',
+  backupsTitle: 'Automatic backups',
+  backupsIntro:
+    'The app saves a copy at every start, provided something has changed. Restoring takes a fresh copy of the current state first.',
+  backupsEmpty: 'There is no backup yet.',
+  backupsWeeks: 'weeks',
+  backupsRestore: 'Restore',
+  backupsConfirmTitle: 'Restore this backup?',
+  backupsConfirmText:
+    'The current data will be replaced by this backup. The app takes another backup beforehand, so the step can be undone.',
+  backupsRestored: 'Backup restored',
+
+  statsTitle: 'Statistics',
+  statsIntro: 'What the reports add up to — at a glance.',
+  statsHoursPerMonth: 'Hours per month',
+  statsByKind: 'How the days break down',
+  statsByStatus: 'Weeks by status',
+  statsAverage: 'Average per completed week',
+  statsLongest: 'Longest run without a gap',
+  statsNoData: 'Once the first weeks are recorded, figures appear here.',
+  statsWeeks: 'weeks',
+  statsDays: 'days',
+  statsProgressOverTime: 'Completed weeks over time',
   carriedOverHint:
     'These texts come from the weekly entry mode. They still appear in the PDF — clear them if they are no longer needed.',
 
@@ -582,6 +631,30 @@ const tr: Dict = {
   hoursShort: 'sa.',
   hoursPerDay: 'Gün başına saat',
   hoursPerDayHint: 'PDF çıktısında günlerin yanındaki saat sütununda görünür.',
+navStats: 'İstatistik',
+  showBackups: 'Yedekleri göster',
+  backupsTitle: 'Otomatik yedekler',
+  backupsIntro:
+    'Uygulama her açılışta, bir şey değiştiyse yedek alır. Geri yüklemeden önce mevcut hal de yedeklenir.',
+  backupsEmpty: 'Henüz yedek yok.',
+  backupsWeeks: 'hafta',
+  backupsRestore: 'Geri yükle',
+  backupsConfirmTitle: 'Bu yedek geri yüklensin mi?',
+  backupsConfirmText:
+    'Mevcut veriler bu yedekle değiştirilecek. Uygulama öncesinde bir yedek daha alır, yani bu adım geri alınabilir.',
+  backupsRestored: 'Yedek geri yüklendi',
+
+  statsTitle: 'İstatistik',
+  statsIntro: 'Raporların toplamda ne söylediği — tek bakışta.',
+  statsHoursPerMonth: 'Aylara göre saat',
+  statsByKind: 'Günlerin dağılımı',
+  statsByStatus: 'Duruma göre haftalar',
+  statsAverage: 'Dolu hafta başına ortalama',
+  statsLongest: 'Kesintisiz en uzun seri',
+  statsNoData: 'İlk haftalar girildiğinde burada rakamlar belirir.',
+  statsWeeks: 'hafta',
+  statsDays: 'gün',
+  statsProgressOverTime: 'Zaman içinde doldurulan haftalar',
   carriedOverHint:
     'Bu metinler haftalık kayıttan geliyor. PDF çıktısında görünmeye devam eder — gerekmiyorsa boşalt.',
 

@@ -118,6 +118,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const language: Language = snapshot.settings.language
   React.useEffect(() => {
     document.documentElement.lang = language
+    // Die Rechtschreibpruefung im Hauptprozess zieht mit.
+    void window.api.setSpellCheckLanguage(language).catch(() => undefined)
   }, [language])
 
   const t = React.useCallback((key: TranslationKey) => DICTS[language][key], [language])

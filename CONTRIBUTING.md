@@ -43,6 +43,12 @@ If you touched the PDF templates, also run `npm run pdf:check`. It renders sampl
 reports for every layout, language and entry mode into `release/pdf-check/` — as
 PDF and as PNG, so layout regressions are visible without clicking through the app.
 
+Two more helpers are available while working on the interface:
+
+- `npm run pdf:check` renders sample reports for every layout and language
+- `npm run uishot` opens the built interface with canned data and captures every
+  screen — handy for checking a layout without clicking through the app
+
 ## Conventions
 
 - **TypeScript everywhere**, `strict` mode stays on

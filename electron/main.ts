@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from 'electron'
+import { app, BrowserWindow, Menu, dialog, ipcMain, nativeTheme, shell } from 'electron'
 import { join } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
 import { mkdirSync } from 'node:fs'
@@ -7,6 +7,7 @@ import { buildReportHtml, renderPdfToFile } from './pdf'
 import type {
   AppSnapshot,
   BackupFile,
+  BackupInfo,
   IpcResult,
   PdfRequest,
   Profile,
@@ -46,6 +47,9 @@ function createWindow(): void {
 
   mainWindow.once('ready-to-show', () => mainWindow?.show())
 
+  registerContextMenu()
+  applySpellCheckLanguage(db.getSettings().language)
+
   // Externe Links gehören in den Standardbrowser, nicht in die App.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://')) shell.openExternal(url)
@@ -57,6 +61,64 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+}
+
+/* -------------------------------------------------- Rechtschreibpruefung ---- */
+
+/**
+ * Chromium bringt die Woerterbuecher mit. Gepflegt wird die Sprache der
+ * Oberflaeche, dazu Englisch — Fachbegriffe im Bericht sind oft englisch.
+ */
+function applySpellCheckLanguage(language: string): void {
+  const session = mainWindow?.webContents.session
+  if (!session) return
+  const available = session.availableSpellCheckerLanguages
+  const wanted = [language, 'en-US'].filter((code) => available.includes(code))
+  try {
+    session.setSpellCheckerLanguages(wanted.length ? wanted : ['en-US'])
+  } catch {
+    /* Ohne Woerterbuch laeuft die App weiter, nur ohne Unterstreichung. */
+  }
+}
+
+const MENU_LABELS: Record<string, { add: string; cut: string; copy: string; paste: string }> = {
+  de: { add: 'Zum Wörterbuch hinzufügen', cut: 'Ausschneiden', copy: 'Kopieren', paste: 'Einfügen' },
+  en: { add: 'Add to dictionary', cut: 'Cut', copy: 'Copy', paste: 'Paste' },
+  tr: { add: 'Sözlüğe ekle', cut: 'Kes', copy: 'Kopyala', paste: 'Yapıştır' },
+}
+
+/** Rechtsklick im Textfeld: Korrekturvorschlaege und die ueblichen Befehle. */
+function registerContextMenu(): void {
+  mainWindow?.webContents.on('context-menu', (_event, params) => {
+    const labels = MENU_LABELS[db.getSettings().language] ?? MENU_LABELS.de
+    const items: Electron.MenuItemConstructorOptions[] = []
+
+    for (const suggestion of params.dictionarySuggestions) {
+      items.push({
+        label: suggestion,
+        click: () => mainWindow?.webContents.replaceMisspelling(suggestion),
+      })
+    }
+    if (params.misspelledWord) {
+      if (items.length) items.push({ type: 'separator' })
+      items.push({
+        label: labels.add,
+        click: () =>
+          mainWindow?.webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord),
+      })
+      items.push({ type: 'separator' })
+    }
+
+    if (params.isEditable || params.selectionText) {
+      items.push(
+        { label: labels.cut, role: 'cut', enabled: params.editFlags.canCut },
+        { label: labels.copy, role: 'copy', enabled: params.editFlags.canCopy },
+        { label: labels.paste, role: 'paste', enabled: params.editFlags.canPaste },
+      )
+    }
+
+    if (items.length) Menu.buildFromTemplate(items).popup()
+  })
 }
 
 /* ------------------------------------------------------------------ IPC ---- */
@@ -83,6 +145,12 @@ function registerIpc(): void {
   handle<Template>('template:save', (t: Template) => db.saveTemplate(t))
   handle<void>('template:delete', (id: string) => db.deleteTemplate(id))
   handle('storage:info', () => db.storageInfo())
+  handle<BackupInfo[]>('backup:list', () => db.listBackups())
+  handle<AppSnapshot>('backup:restore', (file: string) => db.restoreBackup(file))
+
+  handle<void>('spellcheck:language', (language: string) => {
+    applySpellCheckLanguage(language)
+  })
 
   handle<void>('shell:openDataDir', async () => {
     const dir = db.storageInfo().dataDir

@@ -234,6 +234,42 @@ app.whenReady().then(async () => {
     assert(count > 0, 'Es wurde gar nicht gesichert')
   })
 
+  check('Sicherungen lassen sich auflisten', () => {
+    const list = db.listBackups()
+    assert(list.length > 0, 'Liste ist leer')
+    assert(list[0].entryCount > 0, 'Anzahl der Wochen fehlt')
+    assert(list[0].sizeBytes > 0, 'Groesse fehlt')
+    assert(Date.parse(list[0].createdAt) > 0, 'Zeitstempel fehlt')
+    // Neueste zuerst.
+    const times = list.map((b) => Date.parse(b.createdAt))
+    assert(times.every((t, i) => i === 0 || t <= times[i - 1]), 'Reihenfolge stimmt nicht')
+  })
+
+  check('Eine Sicherung laesst sich zurueckspielen', () => {
+    const list = db.listBackups()
+    const target = list[list.length - 1]
+    const before = db.listEntries().length
+    db.saveEntry(weekEntry('2026-KW20', 20, 'daily'))
+    equal(db.listEntries().length, before + 1, 'Zwischenstand')
+
+    const restored = db.restoreBackup(target.file)
+    equal(restored.entries.length, target.entryCount, 'Anzahl aus der Sicherung')
+    assert(
+      !db.listEntries().some((e) => e.id === '2026-KW20'),
+      'Die zwischenzeitlich angelegte Woche ist noch da',
+    )
+  })
+
+  check('Unbekannte Sicherungen werden abgewiesen', () => {
+    let blocked = false
+    try {
+      db.restoreBackup('../data/berichtsheft.db')
+    } catch (error) {
+      blocked = String(error.message).includes('UNKNOWN_BACKUP')
+    }
+    assert(blocked, 'Ein Pfad von aussen wurde akzeptiert')
+  })
+
   check('Speicherangaben sind plausibel', () => {
     const info = db.storageInfo()
     assert(info.dbSizeBytes > 0, 'Größe')

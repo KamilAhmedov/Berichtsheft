@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
   AppSnapshot,
+  BackupInfo,
   IpcResult,
   PdfRequest,
   Profile,
@@ -35,6 +36,9 @@ const api = {
   exportPdf: (req: PdfRequest) => call<string | null>('pdf:export', req),
 
   storageInfo: () => call<StorageInfo>('storage:info'),
+  listBackups: () => call<BackupInfo[]>('backup:list'),
+  restoreBackup: (file: string) => call<AppSnapshot>('backup:restore', file),
+  setSpellCheckLanguage: (language: string) => call<void>('spellcheck:language', language),
   openDataDir: () => call<void>('shell:openDataDir'),
   showItemInFolder: (path: string) => call<void>('shell:showItem', path),
   setNativeTheme: (isDark: boolean) => call<void>('theme:set', isDark),
