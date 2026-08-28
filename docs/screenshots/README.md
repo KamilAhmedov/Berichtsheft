@@ -1,6 +1,6 @@
 # Bildschirmfotos / Screenshots / Ekran görüntüleri
 
-Fünf Aufnahmen werden in den README-Dateien eingebunden. Dateinamen bitte genau so
+Sechs Aufnahmen werden in den README-Dateien eingebunden. Dateinamen bitte genau so
 verwenden, sonst bleiben die Bilder leer.
 
 | Datei | Was drauf sein soll |
@@ -9,7 +9,8 @@ verwenden, sonst bleiben die Bilder leer.
 | `02-wochenliste.png` | Reiter **Wochen** — die Liste selbst, mit Suchfeld, Filtern und Status-Kennzeichen in mehreren Farben |
 | `03-wochenbericht.png` | Ein geöffneter **Wochenbericht** in der täglichen Erfassung, mit gefüllten Tageszeilen, einem Abwesenheitstag und Textbausteinen |
 | `04-einstellungen.png` | Reiter **Einstellungen** im **dunklen Design** — Sprache, Erfassungsart, PDF-Layout und Speicherort |
-| `05-pdf.png` | Die **PDF-Ausgabe** im klassischen Layout, geöffnet in einem PDF-Betrachter |
+| `05-pdf-klassisch.png` | **PDF im klassischen Layout**, geöffnet in einem PDF-Betrachter |
+| `06-pdf-modern.png` | **Dieselbe Woche im modernen Layout** — so lassen sich beide vergleichen |
 
 ## Aufnehmen
 
@@ -19,8 +20,9 @@ verwenden, sonst bleiben die Bilder leer.
 3. **Windows-Taste + Umschalt + S**, Fenster auswählen, Ausschnitt kopieren.
    Alternativ das Snipping Tool oder **Alt + Druck** für das aktive Fenster.
 4. Als PNG in diesem Ordner speichern, mit genau den Namen aus der Tabelle.
-5. Für `05-pdf.png` ein PDF aus der App erzeugen, öffnen und die erste Seite
-   aufnehmen.
+5. Für die beiden PDF-Bilder dieselbe Woche zweimal ausgeben: einmal unter
+   **Einstellungen → PDF-Layout → Klassisch**, einmal unter **Modern**. Nur so
+   zeigt der Vergleich denselben Inhalt.
 
 Breite von etwa 1200 px reicht völlig; größere Bilder blähen das Repository nur auf.
 Diese Datei kann im Ordner bleiben, sie stört nicht.

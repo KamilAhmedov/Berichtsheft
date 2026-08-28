@@ -49,12 +49,12 @@ produces a PDF in the classic IHK style.
     <td align="center"><sub>Settings — dark theme, language, data location</sub></td>
   </tr>
   <tr>
-    <td colspan="2" align="center">
-      <img src="docs/screenshots/05-pdf.png" alt="PDF output in the classic layout" width="49%">
-    </td>
+    <td width="50%"><img src="docs/screenshots/05-pdf-klassisch.png" alt="PDF output in the classic layout"></td>
+    <td width="50%"><img src="docs/screenshots/06-pdf-modern.png" alt="PDF output in the modern layout"></td>
   </tr>
   <tr>
-    <td colspan="2" align="center"><sub>PDF output — one page per week in the classic layout</sub></td>
+    <td align="center"><sub>PDF — classic layout, following the IHK form</sub></td>
+    <td align="center"><sub>PDF — modern layout, the same content</sub></td>
   </tr>
 </table>
 

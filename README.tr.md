@@ -48,12 +48,12 @@ otomatik hesaplanır, eksik haftalar gösterilir, tek tuşla IHK tarzı PDF üre
     <td align="center"><sub>Ayarlar — koyu tema, dil, veri konumu</sub></td>
   </tr>
   <tr>
-    <td colspan="2" align="center">
-      <img src="docs/screenshots/05-pdf.png" alt="Klasik düzende PDF çıktısı" width="49%">
-    </td>
+    <td width="50%"><img src="docs/screenshots/05-pdf-klassisch.png" alt="Klasik düzende PDF çıktısı"></td>
+    <td width="50%"><img src="docs/screenshots/06-pdf-modern.png" alt="Modern düzende PDF çıktısı"></td>
   </tr>
   <tr>
-    <td colspan="2" align="center"><sub>PDF çıktısı — klasik düzende, her hafta bir sayfa</sub></td>
+    <td align="center"><sub>PDF — klasik düzen, IHK formunu esas alır</sub></td>
+    <td align="center"><sub>PDF — modern düzen, aynı içerik</sub></td>
   </tr>
 </table>
 

@@ -53,12 +53,12 @@ Knopfdruck ein PDF im IHK-Stil.
     <td align="center"><sub>Einstellungen — dunkles Design, Sprache, Datenablage</sub></td>
   </tr>
   <tr>
-    <td colspan="2" align="center">
-      <img src="docs/screenshots/05-pdf.png" alt="PDF-Ausgabe im klassischen Layout" width="49%">
-    </td>
+    <td width="50%"><img src="docs/screenshots/05-pdf-klassisch.png" alt="PDF-Ausgabe im klassischen Layout"></td>
+    <td width="50%"><img src="docs/screenshots/06-pdf-modern.png" alt="PDF-Ausgabe im modernen Layout"></td>
   </tr>
   <tr>
-    <td colspan="2" align="center"><sub>PDF-Ausgabe — eine Seite je Woche im klassischen Layout</sub></td>
+    <td align="center"><sub>PDF — klassisches Layout, an den IHK-Vordruck angelehnt</sub></td>
+    <td align="center"><sub>PDF — modernes Layout, dieselben Angaben</sub></td>
   </tr>
 </table>
 
