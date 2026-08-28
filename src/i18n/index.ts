@@ -194,6 +194,8 @@ const de = {
   tipWeekly:
     'Tipp: fasse die Woche in ganzen Sätzen zusammen und nenne die eingesetzten Werkzeuge und Verfahren.',
   hoursShort: 'Std.',
+  hoursPerDay: 'Stunden je Wochentag',
+  hoursPerDayHint: 'Erscheinen im PDF in der Stundenspalte neben den Wochentagen.',
 
 }
 
@@ -381,6 +383,8 @@ const en: Dict = {
   tipWeekly:
     'Tip: summarise the week in full sentences and name the tools and methods you used.',
   hoursShort: 'h',
+  hoursPerDay: 'Hours per weekday',
+  hoursPerDayHint: 'Printed in the hours column next to the weekdays.',
 
 }
 
@@ -566,6 +570,8 @@ const tr: Dict = {
   tipWeekly:
     'İpucu: haftayı tam cümlelerle özetle ve kullandığın araç ve yöntemleri belirt.',
   hoursShort: 'sa.',
+  hoursPerDay: 'Gün başına saat',
+  hoursPerDayHint: 'PDF çıktısında günlerin yanındaki saat sütununda görünür.',
 
 }
 

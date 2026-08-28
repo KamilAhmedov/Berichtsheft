@@ -34,11 +34,8 @@ export interface WeekEntry {
   /** 1..4 — Lehrjahr, aus dem Ausbildungsbeginn berechnet. */
   trainingYear: number
   company: string
-  companyHours: number
   school: string
-  schoolHours: number
   instruction: string
-  instructionHours: number
   /** Tägliche Aufstellung (Mo–Sa). Bleibt auch im Wochenmodus erhalten. */
   days: DayEntry[]
   notes: string

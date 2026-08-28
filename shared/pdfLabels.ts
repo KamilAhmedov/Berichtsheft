@@ -15,8 +15,10 @@ export interface PdfLabels {
   traineeName: string
   trainingYear: string
   trainingArea: string
+  trainer: string
   weekFrom: string
   until: string
+  period: string
 
   blockCompany: string
   blockUnits: string
@@ -31,8 +33,6 @@ export interface PdfLabels {
 
   signTrainee: string
   signTrainer: string
-  signGuardian: string
-  signOther: string
 
   noEntries: string
 }
@@ -46,8 +46,10 @@ export const PDF_LABELS: Record<Language, PdfLabels> = {
     traineeName: 'Name des/der Auszubildenden',
     trainingYear: 'Ausbildungsjahr',
     trainingArea: 'Ausbildungsbereich',
+    trainer: 'Ausbilder/in',
     weekFrom: 'Ausbildungswoche vom',
     until: 'bis',
+    period: 'Berichtszeitraum',
 
     blockCompany: 'Betriebliche Tätigkeiten',
     blockUnits: 'Unterweisungen, betrieblicher Unterricht, sonstige Schulungen',
@@ -69,8 +71,6 @@ export const PDF_LABELS: Record<Language, PdfLabels> = {
 
     signTrainee: 'Datum, Unterschrift Auszubildende/r',
     signTrainer: 'Datum, Unterschrift Ausbildende/r oder Ausbilder/in',
-    signGuardian: 'Datum, Unterschrift gesetzliche/r Vertreter/in',
-    signOther: 'ggf. weitere Sichtvermerke (z. B. Arbeitnehmervertreter)',
 
     noEntries: 'Keine Einträge im gewählten Zeitraum.',
   },
@@ -83,8 +83,10 @@ export const PDF_LABELS: Record<Language, PdfLabels> = {
     traineeName: 'Name of trainee',
     trainingYear: 'Training year',
     trainingArea: 'Training area',
+    trainer: 'Trainer',
     weekFrom: 'Training week from',
     until: 'to',
+    period: 'Reporting period',
 
     blockCompany: 'Work in the company',
     blockUnits: 'Instruction, in-house lessons, other training',
@@ -106,8 +108,6 @@ export const PDF_LABELS: Record<Language, PdfLabels> = {
 
     signTrainee: 'Date, signature of trainee',
     signTrainer: 'Date, signature of employer or trainer',
-    signGuardian: 'Date, signature of legal guardian',
-    signOther: 'Further endorsements if applicable (e.g. works council)',
 
     noEntries: 'No entries in the selected period.',
   },
@@ -120,8 +120,10 @@ export const PDF_LABELS: Record<Language, PdfLabels> = {
     traineeName: 'Öğrencinin adı',
     trainingYear: 'Eğitim yılı',
     trainingArea: 'Eğitim alanı',
+    trainer: 'Eğitmen',
     weekFrom: 'Eğitim haftası',
     until: 'bitiş',
+    period: 'Rapor dönemi',
 
     blockCompany: 'Firmadaki çalışmalar',
     blockUnits: 'Eğitimler, firma içi dersler, diğer kurslar',
@@ -143,8 +145,6 @@ export const PDF_LABELS: Record<Language, PdfLabels> = {
 
     signTrainee: 'Tarih, öğrenci imzası',
     signTrainer: 'Tarih, işveren veya eğitmen imzası',
-    signGuardian: 'Tarih, yasal vasi imzası',
-    signOther: 'Varsa diğer onaylar (ör. işçi temsilcisi)',
 
     noEntries: 'Seçilen dönemde kayıt yok.',
   },

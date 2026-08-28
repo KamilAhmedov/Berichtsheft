@@ -81,7 +81,7 @@ kaydet, diğer bilgisayarda **Verileri içe aktar** ile o dosyayı seç. Hepsi b
 
 ### Hazır sürümü indir (önerilen)
 
-[**Releases**](https://github.com/KamilAhmedov/berichtsheft/releases) sayfasında iki dosya var:
+[**Releases**](https://github.com/KamilAhmedov/Berichtsheft/releases) sayfasında iki dosya var:
 
 | Dosya | Ne işe yarar |
 | --- | --- |
@@ -118,7 +118,7 @@ node -v
 Git kuruluysa:
 
 ```bash
-git clone https://github.com/KamilAhmedov/berichtsheft.git
+git clone https://github.com/KamilAhmedov/Berichtsheft.git
 cd berichtsheft
 ```
 

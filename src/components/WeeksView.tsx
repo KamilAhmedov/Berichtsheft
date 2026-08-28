@@ -224,7 +224,7 @@ export function WeeksView({
                 </div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
                   {formatDateRange(e.startDate, e.endDate, locale)} ·{' '}
-                  {totalHours(e, settings.entryMode).toLocaleString(locale, {
+                  {totalHours(e).toLocaleString(locale, {
                     maximumFractionDigits: 1,
                   })}{' '}
                   {t('hoursShort')}

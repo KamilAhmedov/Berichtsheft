@@ -55,14 +55,14 @@ export function Dashboard({
   onNavigate: (view: View) => void
   onOpenWeek: (isoYear: number, isoWeek: number) => void
 }) {
-  const { t, locale, profile, entries, settings } = useApp()
+  const { t, locale, profile, entries } = useApp()
 
   const filled = React.useMemo(() => entries.filter((e) => !isEmptyEntry(e)), [entries])
   const missing = React.useMemo(() => missingWeeks(profile, entries), [profile, entries])
   const planned = React.useMemo(() => plannedWeeks(profile), [profile])
   const hoursSum = React.useMemo(
-    () => filled.reduce((sum, e) => sum + totalHours(e, settings.entryMode), 0),
-    [filled, settings.entryMode],
+    () => filled.reduce((sum, e) => sum + totalHours(e), 0),
+    [filled],
   )
 
   const now = new Date()

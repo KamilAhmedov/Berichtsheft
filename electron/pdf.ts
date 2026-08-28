@@ -3,9 +3,9 @@ import { rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import type { DayEntry, Language, PdfLayout, Profile, WeekEntry } from '../shared/types'
+import type { Language, PdfLayout, Profile, WeekEntry } from '../shared/types'
 import { PDF_LABELS, PDF_LOCALE, type PdfLabels } from '../shared/pdfLabels'
-import { addDays, formatDateRange, fromISODate } from '../shared/dates'
+import { formatDateRange, fromISODate } from '../shared/dates'
 
 /**
  * Das PDF entsteht, indem eine unsichtbare Fenster-Instanz das Berichts-HTML
@@ -34,16 +34,21 @@ function hoursText(value: number, locale: string): string {
   return value.toLocaleString(locale, { maximumFractionDigits: 1 })
 }
 
+/**
+ * Tagesweise erfasst? Entscheidend sind die Tagestexte — Stunden allein
+ * genuegen nicht, denn die stehen auch bei der Wochenerfassung je Tag.
+ */
 function hasDays(e: WeekEntry): boolean {
-  return (e.days ?? []).some((d) => d.text.trim() || d.hours > 0)
+  return (e.days ?? []).some((d) => d.text.trim().length > 0)
 }
 
 function dayHours(e: WeekEntry): number {
   return (e.days ?? []).reduce((sum, d) => sum + (d.hours || 0), 0)
 }
 
+/** Die Stunden stehen ausschliesslich bei den Tagen. */
 function totalOf(e: WeekEntry): number {
-  return hasDays(e) ? dayHours(e) : e.companyHours + e.schoolHours + e.instructionHours
+  return dayHours(e)
 }
 
 function formatDate(iso: string, locale: string): string {
@@ -55,39 +60,92 @@ function formatDate(iso: string, locale: string): string {
   })
 }
 
-/* ------------------------------------------------------- Gemeinsame Teile -- */
+/* -------------------------------------------------------------- Klassisch -- */
 
-/** Kopfzeilen: Name, Ausbildungsjahr, Bereich, Zeitraum — wie im Vordruck. */
+/**
+ * Höhe des Inhaltsblocks in Millimetern. A4 ist 297 mm hoch; nach Rändern,
+ * Überschrift, Kopftabelle und Unterschriftszeilen bleibt ungefähr so viel.
+ * Der Inhalt wird auf diese Höhe verteilt, damit unten nichts leer bleibt.
+ */
+const BODY_MM = 208
+
+/** Höhe einer Abschnittsüberschrift. */
+const HEAD_MM = 7
+
+function classicStyles(): string {
+  return `
+    @page { size: A4; margin: 12mm 12mm 10mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5pt;
+      color: #000;
+      line-height: 1.4;
+    }
+    .sheet { page-break-after: always; }
+    .sheet:last-child { page-break-after: auto; }
+
+    .head { text-align: center; margin-bottom: 4mm; }
+    h1 { font-size: 13.5pt; margin: 0; letter-spacing: .2px; }
+    .sub { font-size: 10pt; margin-top: 1mm; }
+
+    table { border-collapse: collapse; table-layout: fixed; width: 100%; }
+    td, th { border: 0.35mm solid #444; padding: 1.6mm 2.2mm; vertical-align: top;
+             text-align: left; font-weight: normal; overflow: hidden; }
+
+    .meta { margin-bottom: 3mm; }
+    .meta td { height: 7.5mm; vertical-align: middle; white-space: nowrap; }
+    .meta .k { background: #f2f2f2; font-size: 8.5pt; }
+
+    .content th { background: #f2f2f2; font-weight: bold; height: ${HEAD_MM}mm;
+                  vertical-align: middle; font-size: 9pt; }
+    .content td.body { line-height: 1.5; }
+
+    .days .c-day { width: 30mm; font-weight: bold; font-size: 8.5pt; }
+    .days .c-day .d { display: block; font-weight: normal; font-size: 8pt;
+                      color: #444; margin-top: 0.6mm; }
+    .days .c-kind { width: 26mm; font-size: 8.5pt; color: #333; }
+    .days .c-h { width: 18mm; text-align: right; }
+    .days th { text-align: center; }
+    .days th.c-text { text-align: left; }
+    .days .total td { height: ${HEAD_MM}mm; background: #f2f2f2; font-weight: bold;
+                      vertical-align: middle; }
+
+    /* Zwei Unterschriftszeilen — mehr verlangt der Nachweis nicht. */
+    .sign { display: flex; gap: 16mm; margin-top: 11mm; }
+    .sign .line { flex: 1; border-top: 0.35mm solid #444; padding-top: 1.4mm;
+                  font-size: 8pt; }
+  `
+}
+
+/** Kopfangaben: Name, Ausbildungsjahr, Berichtszeitraum, Summe der Stunden. */
 function metaTable(e: WeekEntry, p: Profile, L: PdfLabels, locale: string): string {
+  const total = dayHours(e)
   return `
     <table class="meta">
+      <colgroup><col style="width:46mm"><col><col style="width:32mm"><col style="width:30mm"></colgroup>
       <tr>
-        <td class="k">${esc(L.traineeName)}:</td>
-        <td colspan="3">${esc(p.fullName)}</td>
-      </tr>
-      <tr>
-        <td class="k">${esc(L.trainingYear)}:</td>
+        <td class="k">${esc(L.traineeName)}</td>
+        <td>${esc(p.fullName)}</td>
+        <td class="k">${esc(L.trainingYear)}</td>
         <td>${e.trainingYear}</td>
-        <td class="k">${esc(L.trainingArea)}:</td>
-        <td>${esc(p.department || p.company)}</td>
       </tr>
       <tr>
-        <td class="k">${esc(L.weekFrom)}:</td>
-        <td>${esc(formatDate(e.startDate, locale))}</td>
-        <td class="k narrow">${esc(L.until)}:</td>
-        <td>${esc(formatDate(e.endDate, locale))}</td>
+        <td class="k">${esc(L.period)}</td>
+        <td>${esc(formatDate(e.startDate, locale))} – ${esc(formatDate(e.endDate, locale))}</td>
+        <td class="k">${esc(L.total)}</td>
+        <td>${total ? `${esc(hoursText(total, locale))} ${esc(L.hours)}` : ''}</td>
       </tr>
     </table>`
 }
 
-/** Vier Unterschriftsfelder in zwei Reihen, wie auf dem Vordruck. */
+/** Nur die beiden Unterschriften, die der Nachweis wirklich braucht. */
 function signatures(L: PdfLabels): string {
   return `
     <div class="sign">
       <div class="line">${esc(L.signTrainee)}</div>
       <div class="line">${esc(L.signTrainer)}</div>
-      <div class="line">${esc(L.signGuardian)}</div>
-      <div class="line last">${esc(L.signOther)}</div>
     </div>`
 }
 
@@ -99,156 +157,76 @@ function sheetHead(L: PdfLabels, daily: boolean): string {
     </div>`
 }
 
-/* -------------------------------------------------------------- Klassisch -- */
+/**
+ * Die Textblöcke einer Woche. Leere Abschnitte entfallen — ein beschrifteter,
+ * aber leerer Kasten sagt nichts aus und verschenkt nur Platz. Die vorhandenen
+ * teilen sich die freie Höhe.
+ */
+function textSections(
+  sections: Array<{ heading: string; value: string; weight: number }>,
+  availableMm: number,
+): string {
+  const present = sections.filter((s) => s.value.trim().length > 0)
+  const used = present.length ? present : [sections[0]]
+  const weightSum = used.reduce((sum, s) => sum + s.weight, 0)
+  const bodyMm = availableMm - used.length * HEAD_MM
 
-function classicStyles(): string {
-  return `
-    @page { size: A4; margin: 12mm 12mm 10mm; }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 9.5pt;
-      color: #000;
-      line-height: 1.35;
-    }
-    .sheet { page-break-after: always; }
-    .sheet:last-child { page-break-after: auto; }
-
-    .head { text-align: center; margin-bottom: 4mm; }
-    h1 { font-size: 13pt; margin: 0; }
-    .sub { font-size: 11pt; font-weight: bold; margin-top: 1mm; }
-
-    table { width: 100%; border-collapse: collapse; }
-    .meta { margin-bottom: 3mm; }
-    .meta td { border: 1px solid #000; padding: 1.6mm 2mm; height: 7mm; }
-    .meta .k { width: 46mm; background: #eef2f7; white-space: nowrap; }
-    .meta .k.narrow { width: 14mm; }
-
-    /* Wochenraster: links Wochentage mit Stundenspalte, rechts die Textblöcke. */
-    .grid { display: flex; border: 1px solid #000; height: 176mm; }
-    .grid .days { display: flex; flex-direction: column; width: 32mm;
-                  border-right: 1px solid #000; }
-    .grid .days .hhead { height: 7mm; border-bottom: 1px solid #000; background: #eef2f7;
-                         font-style: italic; font-size: 8.5pt; display: flex; }
-    .grid .days .hhead .a { width: 16mm; border-right: 1px solid #000; }
-    .grid .days .hhead .b { flex: 1; display: flex; align-items: center;
-                            justify-content: center; }
-    .grid .days .row { flex: 1; display: flex; border-bottom: 1px solid #000; }
-    .grid .days .row:last-child { border-bottom: none; }
-    .grid .days .name { width: 16mm; border-right: 1px solid #000; background: #eef2f7;
-                        font-weight: bold; font-size: 8.5pt;
-                        display: flex; align-items: center; justify-content: center; }
-    .grid .days .name span { writing-mode: vertical-rl; transform: rotate(180deg); }
-    .grid .days .h { flex: 1; text-align: center; padding-top: 2mm; }
-
-    .grid .blocks { flex: 1; display: flex; flex-direction: column; }
-    .grid .blocks .sec { display: flex; flex-direction: column; border-bottom: 1px solid #000; }
-    .grid .blocks .sec:last-child { border-bottom: none; }
-    .grid .blocks .sec.big { flex: 42; }
-    .grid .blocks .sec.mid { flex: 16; }
-    .grid .blocks .sec.small { flex: 14; }
-    .grid .blocks h2 { margin: 0; padding: 1.4mm 2mm; background: #d9d9d9;
-                       border-bottom: 1px solid #000; font-size: 9pt; }
-    .grid .blocks .body { flex: 1; padding: 2mm; overflow: hidden; }
-
-    /* Tagesraster: eine Zeile je Tag mit Text und Stunden. */
-    .daygrid { border: 1px solid #000; height: 176mm; display: flex; flex-direction: column; }
-    .daygrid .r { display: flex; border-bottom: 1px solid #000; }
-    .daygrid .r:last-child { border-bottom: none; }
-    .daygrid .r.head { background: #d9d9d9; font-weight: bold; height: 7mm; }
-    .daygrid .r.day { flex: 1; }
-    .daygrid .r.block { flex: 1.15; flex-direction: column; }
-    .daygrid .c-day { width: 26mm; border-right: 1px solid #000; padding: 1.6mm 2mm;
-                      background: #eef2f7; font-weight: bold; font-size: 8.5pt; }
-    .daygrid .c-day .d { font-weight: normal; color: #333; }
-    .daygrid .c-kind { width: 24mm; border-right: 1px solid #000; padding: 1.6mm 2mm;
-                       font-size: 8.5pt; }
-    .daygrid .c-text { flex: 1; padding: 1.6mm 2mm; }
-    .daygrid .c-h { width: 16mm; border-left: 1px solid #000; padding: 1.6mm 2mm;
-                    text-align: center; }
-    .daygrid .r.head .c-day, .daygrid .r.head .c-kind, .daygrid .r.head .c-text,
-    .daygrid .r.head .c-h { background: #d9d9d9; }
-    .daygrid .r.total { height: 7mm; background: #eef2f7; font-weight: bold; }
-    .daygrid .r.block h2 { margin: 0; padding: 1.4mm 2mm; background: #d9d9d9;
-                           border-bottom: 1px solid #000; font-size: 9pt; }
-    .daygrid .r.block .body { flex: 1; padding: 2mm; }
-
-    /* Vier Unterschriftsfelder, zwei je Reihe. */
-    .sign { display: flex; flex-wrap: wrap; margin-top: 10mm; column-gap: 14mm; row-gap: 11mm; }
-    .sign .line { width: calc(50% - 7mm); border-top: 1px solid #000;
-                  padding-top: 1.2mm; font-size: 7.5pt; }
-    .sign .line.last { border-top: 1px solid #000; }
-  `
+  return used
+    .map((s) => {
+      const h = ((bodyMm * s.weight) / weightSum).toFixed(2)
+      return `
+        <tr><th>${esc(s.heading)}</th></tr>
+        <tr style="height:${h}mm"><td class="body">${text(s.value)}</td></tr>`
+    })
+    .join('')
 }
 
-/** Die sieben Wochentage mit den Stunden aus der Tagesliste. */
-function weekdayRows(e: WeekEntry, locale: string): string {
-  const monday = fromISODate(e.startDate)
-  const byIndex = new Map<number, DayEntry>()
-  for (const day of e.days ?? []) {
-    const diff = Math.round(
-      (fromISODate(day.date).getTime() - monday.getTime()) / 86_400_000,
-    )
-    if (diff >= 0 && diff < 7) byIndex.set(diff, day)
-  }
-
-  return Array.from({ length: 7 }, (_, i) => {
-    const name = addDays(monday, i).toLocaleDateString(locale, { weekday: 'long' })
-    const day = byIndex.get(i)
-    return `
-      <div class="row">
-        <div class="name"><span>${esc(name)}</span></div>
-        <div class="h">${day ? esc(hoursText(day.hours, locale)) : ''}</div>
-      </div>`
-  }).join('')
-}
-
-/** Wochenblatt: Stundenraster links, drei Textblöcke rechts. */
+/** Wochenblatt: drei Textblöcke, leere davon weggelassen. */
 function classicWeekly(e: WeekEntry, p: Profile, L: PdfLabels, locale: string): string {
   return `
   <section class="sheet">
     ${sheetHead(L, false)}
     ${metaTable(e, p, L, locale)}
-    <div class="grid">
-      <div class="days">
-        <div class="hhead"><div class="a"></div><div class="b">${esc(L.hours)}</div></div>
-        ${weekdayRows(e, locale)}
-      </div>
-      <div class="blocks">
-        <div class="sec big">
-          <h2>${esc(L.blockCompany)}</h2>
-          <div class="body">${text(e.company)}</div>
-        </div>
-        <div class="sec mid">
-          <h2>${esc(L.blockUnits)}</h2>
-          <div class="body">${text(e.instruction)}</div>
-        </div>
-        <div class="sec small">
-          <h2>${esc(L.blockSchool)}</h2>
-          <div class="body">${text(e.school)}</div>
-        </div>
-      </div>
-    </div>
+    <table class="content">
+      ${textSections(
+        [
+          { heading: L.blockCompany, value: e.company, weight: 3 },
+          { heading: L.blockUnits, value: e.instruction, weight: 1 },
+          { heading: L.blockSchool, value: e.school, weight: 1.4 },
+        ],
+        BODY_MM,
+      )}
+    </table>
     ${signatures(L)}
   </section>`
 }
 
-/** Tagesblatt: eine Zeile je Arbeitstag, darunter die beiden kleineren Blöcke. */
+/** Tagesblatt: eine Zeile je Arbeitstag; Zusatzblöcke nur, wenn sie Inhalt haben. */
 function classicDaily(e: WeekEntry, p: Profile, L: PdfLabels, locale: string): string {
-  const rows = (e.days ?? [])
+  const days = e.days ?? []
+  const extras = [
+    { heading: L.blockUnits, value: e.instruction, weight: 1 },
+    { heading: L.blockSchool, value: e.school, weight: 1 },
+  ].filter((s) => s.value.trim().length > 0)
+
+  // Ein Drittel der Höhe für die Zusatzblöcke, sofern es welche gibt.
+  const extraMm = extras.length ? Math.min(BODY_MM * 0.34, 34 * extras.length + HEAD_MM) : 0
+  const tableMm = BODY_MM - extraMm
+  const rowMm = Math.max(13, (tableMm - 2 * HEAD_MM) / Math.max(days.length, 1))
+
+  const rows = days
     .map((d) => {
       const date = fromISODate(d.date)
       return `
-        <div class="r day">
-          <div class="c-day">
-            ${esc(date.toLocaleDateString(locale, { weekday: 'long' }))}<br>
-            <span class="d">${esc(date.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' }))}</span>
-          </div>
-          <div class="c-kind">${esc(L.dayKinds[d.kind])}</div>
-          <div class="c-text">${text(d.text)}</div>
-          <div class="c-h">${esc(hoursText(d.hours, locale))}</div>
-        </div>`
+        <tr style="height:${rowMm.toFixed(2)}mm">
+          <td class="c-day">
+            ${esc(date.toLocaleDateString(locale, { weekday: 'long' }))}
+            <span class="d">${esc(formatDate(d.date, locale))}</span>
+          </td>
+          <td class="c-kind">${esc(L.dayKinds[d.kind])}</td>
+          <td class="c-text">${text(d.text)}</td>
+          <td class="c-h">${esc(hoursText(d.hours, locale))}</td>
+        </tr>`
     })
     .join('')
 
@@ -256,29 +234,27 @@ function classicDaily(e: WeekEntry, p: Profile, L: PdfLabels, locale: string): s
   <section class="sheet">
     ${sheetHead(L, true)}
     ${metaTable(e, p, L, locale)}
-    <div class="daygrid">
-      <div class="r head">
-        <div class="c-day">${esc(L.day)}</div>
-        <div class="c-kind">${esc(L.kind)}</div>
-        <div class="c-text">${esc(L.blockCompany)}</div>
-        <div class="c-h">${esc(L.hours)}</div>
-      </div>
+    <table class="content days">
+      <colgroup><col style="width:30mm"><col style="width:26mm"><col><col style="width:18mm"></colgroup>
+      <tr>
+        <th class="c-day">${esc(L.day)}</th>
+        <th class="c-kind">${esc(L.kind)}</th>
+        <th class="c-text">${esc(L.blockCompany)}</th>
+        <th class="c-h">${esc(L.hours)}</th>
+      </tr>
       ${rows}
-      <div class="r total">
-        <div class="c-day">${esc(L.total)}</div>
-        <div class="c-kind"></div>
-        <div class="c-text"></div>
-        <div class="c-h">${esc(hoursText(dayHours(e), locale))}</div>
-      </div>
-      <div class="r block">
-        <h2>${esc(L.blockUnits)}</h2>
-        <div class="body">${text(e.instruction)}</div>
-      </div>
-      <div class="r block">
-        <h2>${esc(L.blockSchool)}</h2>
-        <div class="body">${text(e.school)}</div>
-      </div>
-    </div>
+      <tr class="total">
+        <td>${esc(L.total)}</td>
+        <td></td>
+        <td></td>
+        <td class="c-h">${esc(hoursText(dayHours(e), locale))}</td>
+      </tr>
+    </table>
+    ${
+      extras.length
+        ? `<table class="content" style="margin-top:-0.35mm">${textSections(extras, extraMm)}</table>`
+        : ''
+    }
     ${signatures(L)}
   </section>`
 }
@@ -328,9 +304,9 @@ function modernStyles(): string {
     table.days .total-row td { border-top: 2px solid #cbd5e1; font-weight: 600; }
     .muted { color: #94a3b8; font-weight: normal; }
 
-    .sign { display: flex; flex-wrap: wrap; margin-top: 10mm; column-gap: 14mm; row-gap: 10mm; }
-    .sign .line { width: calc(50% - 7mm); border-top: 1px solid #94a3b8;
-                  padding-top: 1.5mm; font-size: 7.5pt; color: #64748b; }
+    .sign { display: flex; gap: 16mm; margin-top: 11mm; }
+    .sign .line { flex: 1; border-top: 1px solid #94a3b8; padding-top: 1.5mm;
+                  font-size: 8pt; color: #64748b; }
   `
 }
 
@@ -369,19 +345,19 @@ function modernDayTable(e: WeekEntry, L: PdfLabels, locale: string): string {
 function modernSheet(e: WeekEntry, p: Profile, L: PdfLabels, locale: string): string {
   const daily = hasDays(e)
 
-  const block = (heading: string, value: string, h: number): string => `
+  const block = (heading: string, value: string): string => `
     <div class="block">
-      <h2><span>${esc(heading)}</span><span class="h">${esc(hoursText(h, locale)) || '—'} ${esc(L.hours)}</span></h2>
+      <h2><span>${esc(heading)}</span></h2>
       <div class="content">${value.trim() ? text(value) : '<span class="empty">—</span>'}</div>
     </div>`
 
   const body = daily
     ? `${modernDayTable(e, L, locale)}
-       ${e.instruction.trim() ? block(L.blockUnits, e.instruction, e.instructionHours) : ''}
-       ${e.school.trim() ? block(L.blockSchool, e.school, e.schoolHours) : ''}`
-    : `${block(L.blockCompany, e.company, e.companyHours)}
-       ${block(L.blockUnits, e.instruction, e.instructionHours)}
-       ${block(L.blockSchool, e.school, e.schoolHours)}`
+       ${e.instruction.trim() ? block(L.blockUnits, e.instruction) : ''}
+       ${e.school.trim() ? block(L.blockSchool, e.school) : ''}`
+    : `${block(L.blockCompany, e.company)}
+       ${block(L.blockUnits, e.instruction)}
+       ${block(L.blockSchool, e.school)}`
 
   return `
   <section class="sheet">
@@ -399,6 +375,7 @@ function modernSheet(e: WeekEntry, p: Profile, L: PdfLabels, locale: string): st
     <div class="meta">
       <div><div class="k">${esc(L.trainingYear)}</div><div class="v">${e.trainingYear}</div></div>
       <div><div class="k">${esc(L.trainingArea)}</div><div class="v">${esc(p.department || p.company) || '—'}</div></div>
+      <div><div class="k">${esc(L.trainer)}</div><div class="v">${esc(p.trainer) || '—'}</div></div>
       <div><div class="k">${esc(L.total)}</div><div class="v">${esc(hoursText(totalOf(e), locale)) || '—'} ${esc(L.hours)}</div></div>
     </div>
 

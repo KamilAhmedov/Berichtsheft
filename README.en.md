@@ -79,7 +79,7 @@ Uninstalling the app does not delete it.
 
 ### Download a released build (recommended)
 
-Two files are published under [**Releases**](https://github.com/KamilAhmedov/berichtsheft/releases):
+Two files are published under [**Releases**](https://github.com/KamilAhmedov/Berichtsheft/releases):
 
 | File | Purpose |
 | --- | --- |
@@ -115,7 +115,7 @@ A version number such as `v20.10.0` means you are set.
 With Git:
 
 ```bash
-git clone https://github.com/KamilAhmedov/berichtsheft.git
+git clone https://github.com/KamilAhmedov/Berichtsheft.git
 cd berichtsheft
 ```
 

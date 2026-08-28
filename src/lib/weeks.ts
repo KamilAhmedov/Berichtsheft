@@ -33,11 +33,8 @@ export function makeEntry(isoYear: number, isoWeek: number, profile: Profile): W
     endDate: toISODate(sunday),
     trainingYear: trainingYearFor(monday, start, profile.durationYears),
     company: '',
-    companyHours: 0,
     school: '',
-    schoolHours: 0,
     instruction: '',
-    instructionHours: 0,
     days: makeDays(monday),
     notes: '',
     status: 'draft',
@@ -46,19 +43,14 @@ export function makeEntry(isoYear: number, isoWeek: number, profile: Profile): W
   }
 }
 
-export function entryHours(e: WeekEntry): number {
-  return e.companyHours + e.schoolHours + e.instructionHours
+/** Die Stunden stehen bei den Tagen — in beiden Erfassungsarten. */
+export function totalHours(e: WeekEntry): number {
+  return (e.days ?? []).reduce((sum, d) => sum + (d.hours || 0), 0)
 }
 
 export function isEmptyEntry(e: WeekEntry): boolean {
   const dayText = (e.days ?? []).some((d) => d.text.trim())
   return !e.company.trim() && !e.school.trim() && !e.instruction.trim() && !dayText
-}
-
-/** Im Tagesmodus zaehlen die Tagesstunden, sonst die drei Wochenfelder. */
-export function totalHours(e: WeekEntry, mode: 'weekly' | 'daily'): number {
-  if (mode === 'daily') return (e.days ?? []).reduce((sum, d) => sum + (d.hours || 0), 0)
-  return entryHours(e)
 }
 
 /** Kurzfassung fuer die Listenansicht — erste gefuellte Zeile, egal aus welchem Feld. */

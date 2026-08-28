@@ -163,11 +163,8 @@ interface EntryRow {
   end_date: string
   training_year: number
   company: string
-  company_hours: number
   school: string
-  school_hours: number
   instruction: string
-  instruction_hours: number
   days: string
   notes: string
   status: string
@@ -204,11 +201,8 @@ function toEntry(r: EntryRow): WeekEntry {
     endDate: r.end_date,
     trainingYear: r.training_year,
     company: r.company,
-    companyHours: r.company_hours,
     school: r.school,
-    schoolHours: r.school_hours,
     instruction: r.instruction,
-    instructionHours: r.instruction_hours,
     days: parseDays(r.days),
     notes: r.notes,
     status: r.status as EntryStatus,
@@ -227,11 +221,11 @@ export function listEntries(): WeekEntry[] {
 const UPSERT_ENTRY = `
   INSERT INTO entries (
     id, iso_year, iso_week, start_date, end_date, training_year,
-    company, company_hours, school, school_hours, instruction, instruction_hours,
+    company, school, instruction,
     days, notes, status, created_at, updated_at
   ) VALUES (
     @id, @isoYear, @isoWeek, @startDate, @endDate, @trainingYear,
-    @company, @companyHours, @school, @schoolHours, @instruction, @instructionHours,
+    @company, @school, @instruction,
     @days, @notes, @status, @createdAt, @updatedAt
   )
   ON CONFLICT(id) DO UPDATE SET
@@ -241,11 +235,8 @@ const UPSERT_ENTRY = `
     end_date          = excluded.end_date,
     training_year     = excluded.training_year,
     company           = excluded.company,
-    company_hours     = excluded.company_hours,
     school            = excluded.school,
-    school_hours      = excluded.school_hours,
     instruction       = excluded.instruction,
-    instruction_hours = excluded.instruction_hours,
     days              = excluded.days,
     notes             = excluded.notes,
     status            = excluded.status,
@@ -314,18 +305,43 @@ export function restore(data: AppSnapshot): AppSnapshot {
   return snapshot()
 }
 
-/** Legt eine Kopie der Datenbank an und haelt nur die letzten KEEP_BACKUPS Stueck. */
+function backupFiles(): string[] {
+  try {
+    return readdirSync(backupDir)
+      .filter((f) => f.endsWith('.db'))
+      .sort()
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Legt eine Kopie der Datenbank an und haelt nur die letzten KEEP_BACKUPS Stueck.
+ *
+ * Hat sich seit der letzten Sicherung nichts geaendert, entfaellt die Kopie —
+ * sonst saeen sich bei haeufigen Programmstarts identische Dateien an.
+ */
 export function rotateBackup(): void {
   if (!existsSync(dbPath)) return
+
+  const existing = backupFiles()
+  const newest = existing[existing.length - 1]
+  if (newest) {
+    try {
+      if (statSync(dbPath).mtimeMs <= statSync(join(backupDir, newest)).mtimeMs) return
+    } catch {
+      /* Im Zweifel lieber sichern. */
+    }
+  }
+
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   try {
     copyFileSync(dbPath, join(backupDir, `berichtsheft-${stamp}.db`))
   } catch {
     return // Ein fehlgeschlagenes Backup darf die App nie blockieren.
   }
-  const files = readdirSync(backupDir)
-    .filter((f) => f.endsWith('.db'))
-    .sort()
+
+  const files = backupFiles()
   for (const old of files.slice(0, Math.max(0, files.length - KEEP_BACKUPS))) {
     try {
       rmSync(join(backupDir, old))

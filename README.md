@@ -6,7 +6,7 @@
 
 **Der Ausbildungsnachweis als Desktop-App — offline, ohne Konto, mit PDF-Export.**
 
-[![CI](https://github.com/KamilAhmedov/berichtsheft/actions/workflows/ci.yml/badge.svg)](https://github.com/KamilAhmedov/berichtsheft/actions/workflows/ci.yml)
+[![CI](https://github.com/KamilAhmedov/Berichtsheft/actions/workflows/ci.yml/badge.svg)](https://github.com/KamilAhmedov/Berichtsheft/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4)
 
@@ -83,7 +83,7 @@ Eine Deinstallation löscht diesen Ordner nicht.
 
 ### Fertige Version herunterladen (empfohlen)
 
-Unter [**Releases**](https://github.com/KamilAhmedov/berichtsheft/releases) liegen zwei Dateien:
+Unter [**Releases**](https://github.com/KamilAhmedov/Berichtsheft/releases) liegen zwei Dateien:
 
 | Datei | Wofür |
 | --- | --- |
@@ -121,7 +121,7 @@ Erscheint eine Versionsnummer wie `v20.10.0`, hat alles geklappt.
 Entweder mit Git:
 
 ```bash
-git clone https://github.com/KamilAhmedov/berichtsheft.git
+git clone https://github.com/KamilAhmedov/Berichtsheft.git
 cd berichtsheft
 ```
 

@@ -51,21 +51,22 @@ const days = [
 const daily = {
   id: '2026-KW12', isoYear: 2026, isoWeek: 12,
   startDate: '2026-03-16', endDate: '2026-03-22', trainingYear: 1,
-  company: '', companyHours: 0, school: '', schoolHours: 0,
-  instruction: '', instructionHours: 0,
+  company: '', school: '', instruction: '',
   days, notes: '', status: 'draft', createdAt: '', updatedAt: '',
 }
 
 const weekly = {
   ...daily,
   id: '2026-KW13', isoWeek: 13, startDate: '2026-03-23', endDate: '2026-03-29',
-  days: [],
+  // Wochenerfassung: Stunden je Tag, aber keine Tagestexte.
+  days: days.map((d, i) => ({
+    ...d,
+    text: '',
+    date: '2026-03-' + String(23 + i).padStart(2, '0'),
+  })),
   company: 'Die Kundenverwaltung um eine Suchfunktion erweitert.\\nDie Ergebnisse werden serverseitig gefiltert und seitenweise geladen.',
-  companyHours: 24,
   school: 'Lernfeld 3: Datenbanken, Normalisierung und Fremdschlüssel.',
-  schoolHours: 8,
   instruction: 'Unterweisung Arbeitssicherheit am Bildschirmarbeitsplatz.',
-  instructionHours: 1.5,
 }
 
 // Türkische Sonderzeichen prüfen — sie scheitern bei PDF-Bibliotheken ohne

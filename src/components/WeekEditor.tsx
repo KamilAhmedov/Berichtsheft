@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useApp } from '@/hooks/useApp'
-import { entryHours, makeDays, totalHours } from '@/lib/weeks'
+import { makeDays, totalHours } from '@/lib/weeks'
 import { cn } from '@/lib/utils'
 
 type Field = 'company' | 'school' | 'instruction'
@@ -160,39 +160,19 @@ function ReportField({
   field,
   label,
   value,
-  hours,
   onChange,
-  onHoursChange,
 }: {
   field: Field
   label: string
   value: string
-  hours: number
   onChange: (value: string) => void
-  onHoursChange: (hours: number) => void
 }) {
   const { t, templates } = useApp()
   const forField = templates.filter((tpl) => tpl.field === field)
 
   return (
     <div className="space-y-2">
-      <div className="flex items-end justify-between gap-4">
-        <Label htmlFor={field}>{label}</Label>
-        <div className="flex items-center gap-2">
-          <Label htmlFor={`${field}-hours`} className="text-xs font-normal text-muted-foreground">
-            {t('hours')}
-          </Label>
-          <Input
-            id={`${field}-hours`}
-            type="number"
-            min={0}
-            step={0.5}
-            value={hours || ''}
-            onChange={(e) => onHoursChange(Number(e.target.value) || 0)}
-            className="h-8 w-20 text-right"
-          />
-        </div>
-      </div>
+      <Label htmlFor={field}>{label}</Label>
 
       <Textarea
         id={field}
@@ -217,6 +197,57 @@ function ReportField({
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+/* ------------------------------------------------- Stunden je Wochentag -- */
+
+/**
+ * In der Wochenerfassung werden die Stunden trotzdem je Tag gepflegt — genau
+ * das erwartet die Stundenspalte des Vordrucks neben den Wochentagen.
+ */
+function WeekHours({
+  days,
+  locale,
+  onChange,
+}: {
+  days: DayEntry[]
+  locale: string
+  onChange: (days: DayEntry[]) => void
+}) {
+  const { t } = useApp()
+
+  return (
+    <div className="space-y-2">
+      <div>
+        <Label>{t('hoursPerDay')}</Label>
+        <p className="mt-0.5 text-xs text-muted-foreground">{t('hoursPerDayHint')}</p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {days.map((day, index) => (
+          <div key={day.date} className="w-[74px]">
+            <div className="mb-1 text-center text-xs text-muted-foreground">
+              {fromISODate(day.date).toLocaleDateString(locale, { weekday: 'short' })}
+            </div>
+            <Input
+              type="number"
+              min={0}
+              max={24}
+              step={0.5}
+              value={day.hours || ''}
+              onChange={(e) =>
+                onChange(
+                  days.map((d, i) =>
+                    i === index ? { ...d, hours: Number(e.target.value) || 0 } : d,
+                  ),
+                )
+              }
+              className="h-8 text-center text-sm"
+            />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -248,7 +279,7 @@ export function WeekEditor({
 
   const daily = settings.entryMode === 'daily'
   const dirty = JSON.stringify(draft) !== JSON.stringify(entry)
-  const total = totalHours(draft, settings.entryMode)
+  const total = totalHours(draft)
 
   const set = <K extends keyof WeekEntry>(key: K, value: WeekEntry[K]) =>
     setDraft((d) => ({ ...d, [key]: value }))
@@ -280,15 +311,13 @@ export function WeekEditor({
     setDraft((d) => ({
       ...d,
       company: previous.company,
-      companyHours: previous.companyHours,
       school: previous.school,
-      schoolHours: previous.schoolHours,
       instruction: previous.instruction,
-      instructionHours: previous.instructionHours,
+      // Übernommen werden Art, Text und Stunden — die Datumswerte bleiben die
+      // dieser Woche, auch wenn die Vorwoche mehr oder weniger Tage hatte.
       days: (previous.days ?? []).map((day, i) => ({
         ...day,
-        // Die Texte werden übernommen, die Daten bleiben die dieser Woche.
-        date: days[i]?.date ?? day.date,
+        date: toISODate(addDays(fromISODate(d.startDate), i)),
       })),
     }))
     toast(t('copyPreviousDone'), 'info')
@@ -451,29 +480,34 @@ export function WeekEditor({
               </div>
             ) : (
               <div className="space-y-5">
+                <div className="flex items-start justify-between gap-4 rounded-lg border p-3.5">
+                  <WeekHours
+                    days={days}
+                    locale={locale}
+                    onChange={(next) => set('days', next)}
+                  />
+                  <Button variant="ghost" size="sm" onClick={toggleSaturday} className="shrink-0">
+                    {days.length > 5 ? t('removeSaturday') : t('addSaturday')}
+                  </Button>
+                </div>
+
                 <ReportField
                   field="company"
                   label={t('fieldCompany')}
                   value={draft.company}
-                  hours={draft.companyHours}
                   onChange={(v) => set('company', v)}
-                  onHoursChange={(v) => set('companyHours', v)}
                 />
                 <ReportField
                   field="school"
                   label={t('fieldSchool')}
                   value={draft.school}
-                  hours={draft.schoolHours}
                   onChange={(v) => set('school', v)}
-                  onHoursChange={(v) => set('schoolHours', v)}
                 />
                 <ReportField
                   field="instruction"
                   label={t('fieldInstruction')}
                   value={draft.instruction}
-                  hours={draft.instructionHours}
                   onChange={(v) => set('instruction', v)}
-                  onHoursChange={(v) => set('instructionHours', v)}
                 />
               </div>
             )}
@@ -566,5 +600,3 @@ export function WeekEditor({
     </>
   )
 }
-
-export { entryHours }
