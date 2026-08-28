@@ -12,6 +12,9 @@
 
 ---
 
+> **Note:** This application was built with AI assistance — concept, code and
+> documentation were developed together with Claude (Anthropic).
+
 ## What is this?
 
 Every apprentice in Germany has to keep an **Ausbildungsnachweis** — commonly called the

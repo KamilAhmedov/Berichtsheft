@@ -12,6 +12,9 @@
 
 ---
 
+> **Not:** Bu uygulama yapay zeka desteğiyle geliştirildi — tasarım, kod ve
+> dokümantasyon Claude (Anthropic) ile birlikte hazırlandı.
+
 ## Bu nedir?
 
 Almanya'da Ausbildung (mesleki eğitim) yapan herkes **Ausbildungsnachweis** tutmak

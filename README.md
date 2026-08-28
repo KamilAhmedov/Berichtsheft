@@ -16,6 +16,9 @@
 
 ---
 
+> **Hinweis:** Diese Anwendung wurde mit Unterstützung von KI entwickelt —
+> Konzept, Code und Dokumentation entstanden gemeinsam mit Claude (Anthropic).
+
 ## Worum geht es?
 
 Jede und jeder Auszubildende in Deutschland muss einen **Ausbildungsnachweis** führen — das
