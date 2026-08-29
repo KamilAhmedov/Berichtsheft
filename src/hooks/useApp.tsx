@@ -172,7 +172,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     saveSettings: (patch) =>
       guard(async () => {
-        const saved = await window.api.saveSettings({ ...snapshot.settings, ...patch })
+        // Nur die Aenderung schicken. Wuerde hier der komplette Stand aus dem
+        // Render mitgehen, koennte eine zweite Aenderung kurz danach die erste
+        // mit veralteten Werten ueberschreiben.
+        const saved = await window.api.saveSettings(patch)
         setSnapshot((s) => ({ ...s, settings: saved }))
       }),
 

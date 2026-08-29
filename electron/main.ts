@@ -141,7 +141,11 @@ function registerIpc(): void {
   handle<WeekEntry>('entry:save', (entry: WeekEntry) => db.saveEntry(entry))
   handle<void>('entry:delete', (id: string) => db.deleteEntry(id))
   handle<Profile>('profile:save', (profile: Profile) => db.setProfile(profile))
-  handle<Settings>('settings:save', (settings: Settings) => db.setSettings(settings))
+  // Es kommt nur die Aenderung an; zusammengefuegt wird mit dem gespeicherten
+  // Stand, damit gleichzeitige Aenderungen einander nicht ueberschreiben.
+  handle<Settings>('settings:save', (patch: Partial<Settings>) =>
+    db.setSettings({ ...db.getSettings(), ...patch }),
+  )
   handle<Template>('template:save', (t: Template) => db.saveTemplate(t))
   handle<void>('template:delete', (id: string) => db.deleteTemplate(id))
   handle('storage:info', () => db.storageInfo())
@@ -190,7 +194,7 @@ function registerIpc(): void {
       ...snap,
     }
     await writeFile(filePath, JSON.stringify(payload, null, 2), 'utf-8')
-    db.setSettings({ ...snap.settings, lastBackupAt: new Date().toISOString() })
+    db.setSettings({ ...db.getSettings(), lastBackupAt: new Date().toISOString() })
     return filePath
   })
 

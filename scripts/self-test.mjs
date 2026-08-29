@@ -34,6 +34,17 @@ app.setPath('userData', ${JSON.stringify(sandbox)})
 
 import * as db from '${posix(join(root, 'electron', 'db.ts'))}'
 import { buildReportHtml } from '${posix(join(root, 'electron', 'pdf.ts'))}'
+import {
+  addDays,
+  fromISODate,
+  getISOWeek,
+  isoWeekStart,
+  toISODate,
+  trainingYearFor,
+  weekId,
+  weeksInISOYear,
+} from '${posix(join(root, 'shared', 'dates.ts'))}'
+import { missingWeeks, plannedWeeks } from '${posix(join(root, 'src', 'lib', 'weeks.ts'))}'
 
 const results = []
 function check(name, fn) {
@@ -332,6 +343,175 @@ app.whenReady().then(async () => {
       const html = buildReportHtml([daily], profile, 'modern', lang)
       assert(html.includes('<section class="sheet"'), lang + ': kein Blatt')
     }
+  })
+
+
+  check('Gleichzeitige Aenderungen an den Einstellungen ueberschreiben sich nicht', () => {
+    // So wie die Oberflaeche es tut: nur die Aenderung schicken.
+    const merge = (patch) => db.setSettings({ ...db.getSettings(), ...patch })
+    merge({ language: 'tr' })
+    merge({ theme: 'dark' })
+    const s = db.getSettings()
+    equal(s.language, 'tr', 'Sprache bleibt')
+    equal(s.theme, 'dark', 'Erscheinungsbild bleibt')
+    merge({ language: 'de', theme: 'system' })
+  })
+
+  /* ------------------------------------------------------- Randfaelle -- */
+
+  check('Kalenderwochen am Jahreswechsel', () => {
+    // Der 1. Januar 2027 faellt in die KW 53 des Jahres 2026.
+    const silvester = getISOWeek(new Date(2027, 0, 1))
+    equal(silvester.isoYear, 2026, 'ISO-Jahr')
+    equal(silvester.isoWeek, 53, 'ISO-Woche')
+    // Und der 29. Dezember 2025 gehoert bereits zur KW 1 des Jahres 2026.
+    const jahreswechsel = getISOWeek(new Date(2025, 11, 29))
+    equal(jahreswechsel.isoYear, 2026, 'ISO-Jahr am Jahresanfang')
+    equal(jahreswechsel.isoWeek, 1, 'ISO-Woche am Jahresanfang')
+  })
+
+  check('Jahre mit 53 Wochen werden erkannt', () => {
+    equal(weeksInISOYear(2026), 53, '2026')
+    equal(weeksInISOYear(2025), 52, '2025')
+  })
+
+  check('Wochenschluessel sortieren ueber den Jahreswechsel', () => {
+    const ids = [weekId(2026, 53), weekId(2027, 1), weekId(2026, 9), weekId(2026, 10)]
+    const sorted = [...ids].sort()
+    equal(sorted.join(','), '2026-KW09,2026-KW10,2026-KW53,2027-KW01', 'Reihenfolge')
+  })
+
+  check('Woche 53 laesst sich anlegen und speichern', () => {
+    const monday = isoWeekStart(2026, 53)
+    const entry = {
+      id: weekId(2026, 53), isoYear: 2026, isoWeek: 53,
+      startDate: toISODate(monday), endDate: toISODate(addDays(monday, 6)),
+      trainingYear: 1, mode: 'daily',
+      company: '', school: '', instruction: '',
+      days: [{ date: toISODate(monday), kind: 'company', text: 'Jahresabschluss', hours: 8 }],
+      notes: '', status: 'draft', createdAt: '', updatedAt: '',
+    }
+    const saved = db.saveEntry(entry)
+    equal(saved.id, '2026-KW53', 'Kennung')
+    equal(saved.startDate, '2026-12-28', 'Montag der KW 53')
+    db.deleteEntry(saved.id)
+  })
+
+  check('Sehr langer Text ueberlebt Speichern und Lesen', () => {
+    const lang = 'Zeile mit Umlauten äöüß und türkischen Zeichen çğıöşü. '.repeat(400)
+    const entry = weekEntry('2026-KW09', 9, 'weekly', { company: lang })
+    const saved = db.saveEntry(entry)
+    equal(saved.company.length, lang.length, 'Laenge')
+    equal(saved.company, lang, 'Inhalt unveraendert')
+    db.deleteEntry(saved.id)
+  })
+
+  check('Halbe Stunden bleiben halbe Stunden', () => {
+    const entry = weekEntry('2026-KW08', 8, 'daily', {
+      days: [
+        { date: '2026-02-16', kind: 'company', text: 'a', hours: 7.5 },
+        { date: '2026-02-17', kind: 'company', text: 'b', hours: 0.25 },
+      ],
+    })
+    const saved = db.saveEntry(entry)
+    equal(saved.days[0].hours, 7.5, 'Sieben ein halb')
+    equal(saved.days[1].hours, 0.25, 'Viertelstunde')
+    db.deleteEntry(saved.id)
+  })
+
+  check('Eine Woche mit sieben Tagen bleibt vollstaendig', () => {
+    const monday = isoWeekStart(2026, 7)
+    const days = Array.from({ length: 7 }, (_, i) => ({
+      date: toISODate(addDays(monday, i)),
+      kind: i > 4 ? 'off' : 'company',
+      text: i > 4 ? '' : 'Tag ' + i,
+      hours: i > 4 ? 0 : 8,
+    }))
+    const saved = db.saveEntry(weekEntry('2026-KW07', 7, 'daily', { days }))
+    equal(saved.days.length, 7, 'Anzahl')
+    equal(saved.days[6].kind, 'off', 'Sonntag')
+    db.deleteEntry(saved.id)
+  })
+
+  check('Import mit unbrauchbaren Feldern kippt nicht', () => {
+    const snap = db.snapshot()
+    const kaputt = {
+      profile: snap.profile,
+      settings: snap.settings,
+      templates: [],
+      entries: [
+        {
+          id: '2026-KW05', isoYear: 2026, isoWeek: 5,
+          startDate: '2026-01-26', endDate: '2026-02-01', trainingYear: 1,
+          company: 'Text', school: '', instruction: '',
+          days: 'kein Array',
+          notes: '', status: 'draft', createdAt: '', updatedAt: '',
+        },
+      ],
+    }
+    const restored = db.restore(kaputt)
+    equal(restored.entries.length, 1, 'Anzahl')
+    assert(Array.isArray(restored.entries[0].days), 'Tagesliste ist kein Array')
+    db.restore(snap)
+  })
+
+  check('Ausbildungsdauer mit halben Jahren rechnet richtig', () => {
+    const start = { ...profile, startDate: '2026-09-01', durationYears: 2.5 }
+    const weeks = plannedWeeks(start)
+    assert(weeks.length > 120 && weeks.length < 140, 'Zweieinhalb Jahre sind rund 130 Wochen, waren ' + weeks.length)
+    const drei = plannedWeeks({ ...start, durationYears: 3 })
+    assert(drei.length > weeks.length, 'Drei Jahre muessen mehr Wochen ergeben')
+  })
+
+  check('Ohne Ausbildungsbeginn bleibt die Planung leer', () => {
+    equal(plannedWeeks({ ...profile, startDate: '' }).length, 0, 'Wochen')
+    equal(missingWeeks({ ...profile, startDate: '' }, db.listEntries()).length, 0, 'Luecken')
+  })
+
+  check('Das Lehrjahr wechselt am Jahrestag', () => {
+    const start = fromISODate('2026-09-01')
+    equal(trainingYearFor(fromISODate('2026-09-01'), start, 3), 1, 'Erster Tag')
+    equal(trainingYearFor(fromISODate('2027-08-31'), start, 3), 1, 'Tag davor')
+    equal(trainingYearFor(fromISODate('2027-09-01'), start, 3), 2, 'Jahrestag')
+    equal(trainingYearFor(fromISODate('2029-09-01'), start, 3), 3, 'Nach dem Ende bleibt es beim letzten')
+  })
+
+  check('Die laufende Woche gilt nicht als Luecke', () => {
+    const heute = new Date()
+    const jetzt = getISOWeek(heute)
+    const start = toISODate(addDays(isoWeekStart(jetzt.isoYear, jetzt.isoWeek), -21))
+    const p = { ...profile, startDate: start, durationYears: 3 }
+    const luecken = missingWeeks(p, [])
+    // Drei Wochen zurueck: die laufende zaehlt nicht mit.
+    equal(luecken.length, 3, 'Anzahl der Luecken')
+    assert(
+      !luecken.some((w) => weekId(w.isoYear, w.isoWeek) === weekId(jetzt.isoYear, jetzt.isoWeek)),
+      'Die laufende Woche steht in der Liste',
+    )
+  })
+
+  check('PDF bleibt bei langem Text bei einer Seite je Woche', () => {
+    const lang = 'Ein Satz, der die Seite fuellen soll. '.repeat(120)
+    const entry = weekEntry('2026-KW06', 6, 'weekly', { company: lang, school: lang })
+    const html = buildReportHtml([entry], profile, 'classic', 'de')
+    equal((html.match(/class="sheet"/g) || []).length, 1, 'Anzahl Blaetter')
+  })
+
+  check('Woche ohne Tage bricht das Tages-PDF nicht', () => {
+    const entry = weekEntry('2026-KW04', 4, 'daily', { days: [] })
+    for (const layout of ['classic', 'modern']) {
+      const html = buildReportHtml([entry], profile, layout, 'de')
+      assert(html.includes('sheet'), layout + ': kein Blatt')
+    }
+  })
+
+  check('Leeres Profil erzeugt trotzdem ein PDF', () => {
+    const leer = {
+      fullName: '', occupation: '', company: '', trainer: '',
+      department: '', startDate: '', durationYears: 3,
+    }
+    const html = buildReportHtml([db.listEntries()[0]], leer, 'classic', 'de')
+    assert(html.includes('Ausbildungsnachweis'), 'Titel fehlt')
   })
 
   /* -------------------------------------------------------- Migration -- */

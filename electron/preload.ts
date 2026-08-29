@@ -27,7 +27,7 @@ const api = {
   saveEntry: (entry: WeekEntry) => call<WeekEntry>('entry:save', entry),
   deleteEntry: (id: string) => call<void>('entry:delete', id),
   saveProfile: (profile: Profile) => call<Profile>('profile:save', profile),
-  saveSettings: (settings: Settings) => call<Settings>('settings:save', settings),
+  saveSettings: (patch: Partial<Settings>) => call<Settings>('settings:save', patch),
   saveTemplate: (t: Template) => call<Template>('template:save', t),
   deleteTemplate: (id: string) => call<void>('template:delete', id),
 
