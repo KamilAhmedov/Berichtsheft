@@ -3,7 +3,6 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { Shell, type View } from '@/components/Shell'
 import { Dashboard } from '@/components/Dashboard'
 import { WeeksView } from '@/components/WeeksView'
-import { StatsView } from '@/components/StatsView'
 import { TemplatesView } from '@/components/TemplatesView'
 import { ProfileView } from '@/components/ProfileView'
 import { SettingsView } from '@/components/SettingsView'
@@ -64,7 +63,6 @@ function Workspace() {
       {view === 'weeks' && (
         <WeeksView pendingWeek={pendingWeek} onPendingHandled={() => setPendingWeek(null)} />
       )}
-      {view === 'stats' && <StatsView />}
       {view === 'templates' && <TemplatesView />}
       {view === 'profile' && <ProfileView />}
       {view === 'settings' && <SettingsView />}

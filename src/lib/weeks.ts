@@ -99,3 +99,59 @@ export function missingWeeks(
 export function currentWeek(today = new Date()): { isoYear: number; isoWeek: number } {
   return getISOWeek(today)
 }
+
+/* --------------------------------------------------- Tageszeilen bearbeiten */
+
+/** Stunden bleiben im sinnvollen Bereich — auch bei Eingabe über die Tastatur. */
+export function clampHours(value: number): number {
+  if (!Number.isFinite(value)) return 0
+  return Math.min(24, Math.max(0, value))
+}
+
+/**
+ * Haengt den naechsten Wochentag an. Mehr als sieben Tage hat eine Woche nicht.
+ * Das Datum ergibt sich aus dem Montag, nicht aus dem letzten Eintrag — so
+ * bleibt die Reihe auch dann richtig, wenn Daten aus einer Sicherung stammen.
+ */
+export function addTrailingDay(days: DayEntry[], startDate: string): DayEntry[] {
+  if (days.length >= 7) return days
+  const date = toISODate(addDays(fromISODate(startDate), days.length))
+  return [...days, { date, kind: 'company', text: '', hours: 0 }]
+}
+
+/**
+ * Nimmt den letzten Tag weg — genau einen. Frueher wurde auf fuenf Tage
+ * gekuerzt; bei einer Woche mit Samstag und Sonntag verschwand dabei der
+ * Sonntag, ohne dass er sich zurueckholen liess.
+ */
+export function removeTrailingDay(days: DayEntry[]): DayEntry[] {
+  if (days.length <= 5) return days
+  return days.slice(0, -1)
+}
+
+/**
+ * Uebernimmt Inhalte der Vorwoche in die aktuelle Woche.
+ *
+ * Die Datumswerte bleiben die dieser Woche. Hat die Vorwoche keine Tageszeilen
+ * — etwa weil sie als Wochentext gefuehrt wurde —, bleiben die vorhandenen
+ * Tage stehen: sonst gingen bereits eingetragene Stunden verloren.
+ */
+export function mergeFromPrevious(current: WeekEntry, previous: WeekEntry): WeekEntry {
+  const source = previous.days ?? []
+  const own = current.days ?? []
+
+  const days = source.length
+    ? source.slice(0, 7).map((day, i) => ({
+        ...day,
+        date: toISODate(addDays(fromISODate(current.startDate), i)),
+      }))
+    : own
+
+  return {
+    ...current,
+    company: previous.company,
+    school: previous.school,
+    instruction: previous.instruction,
+    days,
+  }
+}

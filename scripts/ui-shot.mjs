@@ -173,7 +173,7 @@ app.whenReady().then(async () => {
   await win.loadFile(${JSON.stringify(posix(renderer))})
   await new Promise((r) => setTimeout(r, 2500))
 
-  const views = ['Übersicht', 'Wochen', 'Statistik', 'Textbausteine', 'Profil', 'Einstellungen']
+  const views = ['Übersicht', 'Wochen', 'Textbausteine', 'Profil', 'Einstellungen']
   const log = []
 
   for (const label of views) {
@@ -194,72 +194,61 @@ app.whenReady().then(async () => {
     log.push('OK ' + name)
   }
 
-  // Der Tooltip eines Ringdiagramms — er darf nicht hinter der Beschriftung
-  // in der Mitte verschwinden.
-  const onStats = await win.webContents.executeJavaScript(
-    "(() => { const nav = [...document.querySelectorAll('nav button')]" +
-      ".find((b) => b.textContent.trim() === 'Statistik');" +
-      " if (!nav) return false; nav.click(); return true; })()",
+  // Woche anlegen: der Dialog fragt nach einem Datum, nicht nach einer KW.
+  const onWeeks = await win.webContents.executeJavaScript(
+    "(() => { const b = [...document.querySelectorAll('nav button')]" +
+      ".find((x) => x.textContent.trim() === 'Wochen');" +
+      " if (!b) return false; b.click(); return true; })()",
   )
-  if (onStats) {
-    await new Promise((r) => setTimeout(r, 1200))
-    // Erst nach unten rollen, sonst liegen die Ringdiagramme ausserhalb des Bildes.
-    await win.webContents.executeJavaScript(
-      "(() => { const m = document.querySelector('main');" +
-        " if (m) m.scrollTop = m.scrollHeight; return true; })()",
+  if (onWeeks) {
+    await new Promise((r) => setTimeout(r, 800))
+    const opened = await win.webContents.executeJavaScript(
+      "(() => { const b = [...document.querySelectorAll('button')]" +
+        ".find((x) => x.textContent.trim() === 'Neue Woche');" +
+        " if (!b) return false; b.click(); return true; })()",
     )
-    await new Promise((r) => setTimeout(r, 700))
-
-    // Recharts reagiert nur auf echte Zeigereingaben, nicht auf per Skript
-    // ausgeloeste Ereignisse — deshalb der Umweg ueber sendInputEvent.
-    const spot = await win.webContents.executeJavaScript(
-      "(() => { const s = document.querySelector('.recharts-sector');" +
-        " if (!s) return null;" +
-        " const r = s.getBoundingClientRect();" +
-        " return { x: Math.round(r.x + r.width * 0.2), y: Math.round(r.y + r.height * 0.2) }; })()",
-    )
-    if (spot) {
-      win.webContents.sendInputEvent({ type: 'mouseMove', x: spot.x, y: spot.y })
-      await new Promise((r) => setTimeout(r, 300))
-      win.webContents.sendInputEvent({ type: 'mouseMove', x: spot.x + 1, y: spot.y + 1 })
-    }
-    const hovered = Boolean(spot)
-    if (hovered) {
-      await new Promise((r) => setTimeout(r, 1200))
+    if (opened) {
+      await new Promise((r) => setTimeout(r, 2500))
       const shot = await win.webContents.capturePage()
-      writeFileSync(join(OUT, 'statistik-tooltip' + (DARK ? '-dunkel' : '') + '.png'), shot.toPNG())
-      log.push('OK statistik-tooltip.png')
+      writeFileSync(join(OUT, 'neue-woche' + (DARK ? '-dunkel' : '') + '.png'), shot.toPNG())
+      log.push('OK neue-woche.png')
+      await win.webContents.executeJavaScript(
+        "(() => { const b = [...document.querySelectorAll('button')]" +
+          ".find((x) => x.textContent.trim() === 'Abbrechen');" +
+          " if (b) b.click(); return true; })()",
+      )
+      await new Promise((r) => setTimeout(r, 600))
     } else {
-      log.push('NICHT GEFUNDEN: Ringsegment')
+      log.push('NICHT GEFUNDEN: Neue Woche')
+    }
+
+    // Einen vorhandenen Bericht oeffnen.
+    const openedWeek = await win.webContents.executeJavaScript(
+      "(() => { const b = document.querySelector('main button.w-full');" +
+        " if (!b) return false; b.click(); return true; })()",
+    )
+    if (openedWeek) {
+      await new Promise((r) => setTimeout(r, 2500))
+      const shot = await win.webContents.capturePage()
+      writeFileSync(join(OUT, 'bericht' + (DARK ? '-dunkel' : '') + '.png'), shot.toPNG())
+      log.push('OK bericht.png')
+      await win.webContents.executeJavaScript(
+        "(() => { const b = [...document.querySelectorAll('button')]" +
+          ".find((x) => x.textContent.trim() === 'Abbrechen');" +
+          " if (b) b.click(); return true; })()",
+      )
+      await new Promise((r) => setTimeout(r, 600))
+    } else {
+      log.push('NICHT GEFUNDEN: Wochenkarte')
     }
   }
 
-  // Auch das Verlaufsdiagramm ganz unten anfahren — dort haengt der Tooltip
-  // nicht an der Achsenbeschriftung, sondern am Datenpunkt.
-  const linePoint = await win.webContents.executeJavaScript(
-    "(() => { const all = [...document.querySelectorAll('.recharts-surface')];" +
-      " const s = all[all.length - 1]; if (!s) return null;" +
-      " const r = s.getBoundingClientRect();" +
-      " return { x: Math.round(r.x + r.width * 0.62), y: Math.round(r.y + r.height * 0.5) }; })()",
+  await win.webContents.executeJavaScript(
+    "(() => { const b = [...document.querySelectorAll('nav button')]" +
+      ".find((x) => x.textContent.trim() === 'Einstellungen');" +
+      " if (b) b.click(); return true; })()",
   )
-  if (linePoint) {
-    // Erst aus dem vorherigen Diagramm herausfahren, sonst bleibt dessen
-    // Tooltip stehen und der neue erscheint gar nicht.
-    win.webContents.sendInputEvent({ type: 'mouseMove', x: 300, y: 500 })
-    await new Promise((r) => setTimeout(r, 400))
-    for (let step = 0; step < 4; step++) {
-      win.webContents.sendInputEvent({
-        type: 'mouseMove',
-        x: linePoint.x + step,
-        y: linePoint.y + step,
-      })
-      await new Promise((r) => setTimeout(r, 200))
-    }
-    await new Promise((r) => setTimeout(r, 1000))
-    const shot = await win.webContents.capturePage()
-    writeFileSync(join(OUT, 'verlauf-tooltip' + (DARK ? '-dunkel' : '') + '.png'), shot.toPNG())
-    log.push('OK verlauf-tooltip.png')
-  }
+  await new Promise((r) => setTimeout(r, 900))
 
   // Zusaetzlich der Dialog mit den Sicherungen — nur ueber einen Knopf erreichbar.
   const opened = await win.webContents.executeJavaScript(

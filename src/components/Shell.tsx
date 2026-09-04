@@ -3,7 +3,6 @@ import {
   BookOpenCheck,
   CalendarDays,
   LayoutDashboard,
-  ChartColumn,
   Settings2,
   StickyNote,
   UserRound,
@@ -12,12 +11,11 @@ import { cn } from '@/lib/utils'
 import { useApp } from '@/hooks/useApp'
 import type { TranslationKey } from '@/i18n'
 
-export type View = 'dashboard' | 'weeks' | 'stats' | 'templates' | 'profile' | 'settings'
+export type View = 'dashboard' | 'weeks' | 'templates' | 'profile' | 'settings'
 
 const NAV: Array<{ id: View; icon: React.ElementType; label: TranslationKey }> = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'navDashboard' },
   { id: 'weeks', icon: CalendarDays, label: 'navWeeks' },
-  { id: 'stats', icon: ChartColumn, label: 'navStats' },
   { id: 'templates', icon: StickyNote, label: 'navTemplates' },
   { id: 'profile', icon: UserRound, label: 'navProfile' },
   { id: 'settings', icon: Settings2, label: 'navSettings' },

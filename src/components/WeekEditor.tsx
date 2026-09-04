@@ -9,7 +9,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import type { DayEntry, DayKind, EntryMode, EntryStatus, WeekEntry } from '../../shared/types'
-import { addDays, formatDateRange, fromISODate, toISODate } from '../../shared/dates'
+import { formatDateRange, fromISODate } from '../../shared/dates'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,7 +31,14 @@ import {
 } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useApp } from '@/hooks/useApp'
-import { makeDays, totalHours } from '@/lib/weeks'
+import {
+  addTrailingDay,
+  clampHours,
+  makeDays,
+  mergeFromPrevious,
+  removeTrailingDay,
+  totalHours,
+} from '@/lib/weeks'
 import { cn } from '@/lib/utils'
 
 type Field = 'company' | 'school' | 'instruction'
@@ -120,7 +127,7 @@ function DayRow({
             value={day.hours || ''}
             disabled={absent}
             placeholder={t('hoursShort')}
-            onChange={(e) => onChange({ ...day, hours: Number(e.target.value) || 0 })}
+            onChange={(e) => onChange({ ...day, hours: clampHours(Number(e.target.value)) })}
             className="h-8 w-24 text-right text-xs"
           />
         </div>
@@ -245,7 +252,7 @@ function WeekHours({
               onChange={(e) =>
                 onChange(
                   days.map((d, i) =>
-                    i === index ? { ...d, hours: Number(e.target.value) || 0 } : d,
+                    i === index ? { ...d, hours: clampHours(Number(e.target.value)) } : d,
                   ),
                 )
               }
@@ -279,6 +286,8 @@ export function WeekEditor({
   const [draft, setDraft] = React.useState<WeekEntry>(entry)
   const [confirmDelete, setConfirmDelete] = React.useState(false)
   const [confirmDiscard, setConfirmDiscard] = React.useState(false)
+  /** Merkt sich die Richtung, wenn vor dem Blaettern noch gefragt werden muss. */
+  const [pendingStep, setPendingStep] = React.useState<number | null>(null)
   const [busy, setBusy] = React.useState(false)
 
   React.useEffect(() => setDraft(entry), [entry])
@@ -305,13 +314,23 @@ export function WeekEditor({
     )
   }
 
-  function toggleSaturday() {
-    if (days.length > 5) {
-      set('days', days.slice(0, 5))
-    } else {
-      const saturday = addDays(fromISODate(draft.startDate), 5)
-      set('days', [...days, { date: toISODate(saturday), kind: 'company', text: '', hours: 0 }])
-    }
+  /** Genau einen Tag anhaengen oder wegnehmen — nie mehrere auf einmal. */
+  function addDay() {
+    set('days', addTrailingDay(days, draft.startDate))
+  }
+
+  function removeDay() {
+    set('days', removeTrailingDay(days))
+  }
+
+  /** Alle Arbeitstage auf denselben Wert setzen — spart fuenf Eingaben. */
+  function fillHours(value: number) {
+    set(
+      'days',
+      days.map((d) =>
+        ABSENCE.includes(d.kind) ? d : { ...d, hours: value },
+      ),
+    )
   }
 
   /** Übernimmt die Texte der Vorwoche — der Alltag wiederholt sich oft. */
@@ -320,18 +339,7 @@ export function WeekEditor({
       toast(t('copyPreviousNone'), 'info')
       return
     }
-    setDraft((d) => ({
-      ...d,
-      company: previous.company,
-      school: previous.school,
-      instruction: previous.instruction,
-      // Übernommen werden Art, Text und Stunden — die Datumswerte bleiben die
-      // dieser Woche, auch wenn die Vorwoche mehr oder weniger Tage hatte.
-      days: (previous.days ?? []).map((day, i) => ({
-        ...day,
-        date: toISODate(addDays(fromISODate(d.startDate), i)),
-      })),
-    }))
+    setDraft((d) => mergeFromPrevious({ ...d, days }, previous))
     toast(t('copyPreviousDone'), 'info')
   }
 
@@ -354,6 +362,25 @@ export function WeekEditor({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [handleSave])
+
+  /**
+   * Beim Blaettern mit ungesicherten Aenderungen erst fragen. Frueher waren die
+   * Pfeile in diesem Fall einfach gesperrt — ohne Hinweis, warum.
+   */
+  function step(delta: number) {
+    if (dirty) setPendingStep(delta)
+    else onStep(delta)
+  }
+
+  async function saveThenStep() {
+    const delta = pendingStep
+    setPendingStep(null)
+    if (delta === null) return
+    setBusy(true)
+    await saveEntry(draft)
+    setBusy(false)
+    onStep(delta)
+  }
 
   function requestClose() {
     if (dirty) setConfirmDiscard(true)
@@ -414,7 +441,7 @@ export function WeekEditor({
               <div className="flex shrink-0 gap-1">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => onStep(-1)} disabled={dirty}>
+                    <Button variant="ghost" size="icon" onClick={() => step(-1)}>
                       <ChevronLeft />
                     </Button>
                   </TooltipTrigger>
@@ -422,7 +449,7 @@ export function WeekEditor({
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => onStep(1)} disabled={dirty}>
+                    <Button variant="ghost" size="icon" onClick={() => step(1)}>
                       <ChevronRight />
                     </Button>
                   </TooltipTrigger>
@@ -493,9 +520,22 @@ export function WeekEditor({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium">{t('dailySection')}</h3>
-                  <Button variant="ghost" size="sm" onClick={toggleSaturday}>
-                    {days.length > 5 ? t('removeSaturday') : t('addSaturday')}
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => fillHours(8)}>
+                      {t('fillHours').replace('{n}', '8')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={removeDay}
+                      disabled={days.length <= 5}
+                    >
+                      {t('removeLastDay')}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={addDay} disabled={days.length >= 7}>
+                      {t('addDay')}
+                    </Button>
+                  </div>
                 </div>
                 {days.map((day, index) => (
                   <DayRow
@@ -529,9 +569,22 @@ export function WeekEditor({
                     locale={locale}
                     onChange={(next) => set('days', next)}
                   />
-                  <Button variant="ghost" size="sm" onClick={toggleSaturday} className="shrink-0">
-                    {days.length > 5 ? t('removeSaturday') : t('addSaturday')}
-                  </Button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => fillHours(8)}>
+                      {t('fillHours').replace('{n}', '8')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={removeDay}
+                      disabled={days.length <= 5}
+                    >
+                      −
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={addDay} disabled={days.length >= 7}>
+                      +
+                    </Button>
+                  </div>
                 </div>
 
                 <ReportField
@@ -618,6 +671,33 @@ export function WeekEditor({
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
               {t('delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={pendingStep !== null} onOpenChange={(open) => !open && setPendingStep(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('unsavedNavigate')}</DialogTitle>
+            <DialogDescription>{t('unsavedNavigateText')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingStep(null)}>
+              {t('cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                const delta = pendingStep
+                setPendingStep(null)
+                if (delta !== null) onStep(delta)
+              }}
+            >
+              {t('discard')}
+            </Button>
+            <Button onClick={saveThenStep} disabled={busy}>
+              {t('saveAndGo')}
             </Button>
           </DialogFooter>
         </DialogContent>

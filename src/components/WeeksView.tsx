@@ -1,7 +1,15 @@
 import * as React from 'react'
 import { FileDown, Plus, Search } from 'lucide-react'
 import type { EntryStatus, WeekEntry } from '../../shared/types'
-import { addDays, formatDateRange, fromISODate, getISOWeek, weekId, weeksInISOYear } from '../../shared/dates'
+import {
+  addDays,
+  formatDateRange,
+  fromISODate,
+  getISOWeek,
+  isoWeekStart,
+  toISODate,
+  weekId,
+} from '../../shared/dates'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -10,6 +18,7 @@ import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -24,7 +33,14 @@ import {
 import { PageHeader } from '@/components/Shell'
 import { WeekEditor } from '@/components/WeekEditor'
 import { useApp } from '@/hooks/useApp'
-import { entrySummary, isEmptyEntry, makeEntry, totalHours } from '@/lib/weeks'
+import {
+  entrySummary,
+  isEmptyEntry,
+  makeEntry,
+  missingWeeks,
+  plannedWeeks,
+  totalHours,
+} from '@/lib/weeks'
 import { cn } from '@/lib/utils'
 
 const STATUS_VARIANT: Record<EntryStatus, 'secondary' | 'default' | 'success'> = {
@@ -266,6 +282,11 @@ export function WeeksView({
 }
 
 /** Kleiner Dialog zur Auswahl von Jahr und Kalenderwoche. */
+/**
+ * Woche anlegen. Gefragt wird nach einem Datum, nicht nach einer
+ * Kalenderwoche — kaum jemand weiss auswendig, in welcher KW er gerade ist.
+ * Daneben stehen die offenen Wochen zum direkten Nachtragen.
+ */
 function NewWeekDialog({
   onClose,
   onPick,
@@ -273,55 +294,105 @@ function NewWeekDialog({
   onClose: () => void
   onPick: (isoYear: number, isoWeek: number) => void
 }) {
-  const { t, entries } = useApp()
-  const today = getISOWeek(new Date())
-  const [year, setYear] = React.useState(today.isoYear)
-  const [week, setWeek] = React.useState(today.isoWeek)
+  const { t, locale, entries, profile } = useApp()
 
-  const taken = entries.some((e) => e.id === weekId(year, week))
-  const maxWeek = weeksInISOYear(year)
+  const [date, setDate] = React.useState(() => toISODate(new Date()))
+
+  const picked = React.useMemo(() => {
+    const day = date ? fromISODate(date) : new Date()
+    return getISOWeek(Number.isNaN(day.getTime()) ? new Date() : day)
+  }, [date])
+
+  const monday = isoWeekStart(picked.isoYear, picked.isoWeek)
+  const taken = entries.some((e) => e.id === weekId(picked.isoYear, picked.isoWeek))
+
+  /** Liegt die Woche ueberhaupt in der Ausbildungszeit? */
+  const outside = React.useMemo(() => {
+    const planned = plannedWeeks(profile)
+    if (!planned.length) return false
+    const id = weekId(picked.isoYear, picked.isoWeek)
+    return !planned.some((w) => weekId(w.isoYear, w.isoWeek) === id)
+  }, [profile, picked])
+
+  /** Die letzten offenen Wochen — Nachtragen ist der haeufigste Fall. */
+  const open = React.useMemo(
+    () => missingWeeks(profile, entries).slice(-8).reverse(),
+    [profile, entries],
+  )
+
+  const jump = (offsetWeeks: number) =>
+    setDate(toISODate(addDays(new Date(), offsetWeeks * 7)))
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{t('weekNew')}</DialogTitle>
+          <DialogDescription>{t('newWeekDateHint')}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="year">{t('fieldPeriod')}</Label>
-            <Input
-              id="year"
-              type="number"
-              value={year}
-              min={2000}
-              max={2100}
-              onChange={(e) => setYear(Number(e.target.value) || today.isoYear)}
-            />
+            <Label htmlFor="week-date">{t('newWeekDate')}</Label>
+            <div className="flex gap-2">
+              <Input
+                id="week-date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="flex-1"
+              />
+              <Button variant="outline" size="sm" onClick={() => jump(0)}>
+                {t('thisWeek')}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => jump(-1)}>
+                {t('lastWeek')}
+              </Button>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="week">{t('fieldWeek')}</Label>
-            <Input
-              id="week"
-              type="number"
-              min={1}
-              max={maxWeek}
-              value={week}
-              onChange={(e) =>
-                setWeek(Math.min(maxWeek, Math.max(1, Number(e.target.value) || 1)))
-              }
-            />
-          </div>
-        </div>
 
-        {taken && <p className="mt-3 text-sm text-warning">{t('weekTaken')}</p>}
+          <div className="rounded-lg border bg-muted/40 px-3.5 py-3">
+            <div className="text-xs text-muted-foreground">{t('newWeekPreview')}</div>
+            <div className="mt-0.5 font-medium">
+              KW {String(picked.isoWeek).padStart(2, '0')} / {picked.isoYear}
+            </div>
+            <div className="mt-0.5 text-sm text-muted-foreground">
+              {formatDateRange(toISODate(monday), toISODate(addDays(monday, 6)), locale)}
+            </div>
+          </div>
+
+          {taken && <p className="text-sm text-warning">{t('weekTaken')}</p>}
+          {!taken && outside && (
+            <p className="text-sm text-muted-foreground">{t('weekOutsideTraining')}</p>
+          )}
+
+          {open.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-xs font-normal text-muted-foreground">
+                {t('openWeeksPick')}
+              </Label>
+              <div className="flex flex-wrap gap-1.5">
+                {open.map((w) => (
+                  <button
+                    key={weekId(w.isoYear, w.isoWeek)}
+                    onClick={() => onPick(w.isoYear, w.isoWeek)}
+                    className="rounded-md border border-warning/40 bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning transition-colors hover:bg-warning/20"
+                  >
+                    KW {String(w.isoWeek).padStart(2, '0')} / {w.isoYear}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             {t('cancel')}
           </Button>
-          <Button onClick={() => onPick(year, week)}>{taken ? t('edit') : t('add')}</Button>
+          <Button onClick={() => onPick(picked.isoYear, picked.isoWeek)}>
+            {taken ? t('edit') : t('add')}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -71,7 +71,6 @@ produces a PDF in the classic IHK style.
 - **Light and dark theme**, optionally following the Windows setting
 - **Export and import** as a single JSON file — moving to another machine takes two steps
 - **Automatic backups** — the last ten states, listed in the app and restorable with one click
-- **Statistics** — hours per month, how the days break down, weeks by status
 - **Spell checking** in the interface language, suggestions on right-click
 
 ## Privacy
@@ -180,7 +179,7 @@ The resulting `.exe` files land in the `release/` folder.
 | Area | Used |
 | --- | --- |
 | Runtime | Electron 33 |
-| Interface | React 18, TypeScript, Tailwind CSS, Radix UI, Recharts |
+| Interface | React 18, TypeScript, Tailwind CSS, Radix UI |
 | Data | SQLite via better-sqlite3, WAL mode |
 | Build | electron-vite, electron-builder |
 | PDF | Chromium `printToPDF` — full Unicode without embedding font files |

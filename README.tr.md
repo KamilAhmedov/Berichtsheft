@@ -70,7 +70,6 @@ otomatik hesaplanır, eksik haftalar gösterilir, tek tuşla IHK tarzı PDF üre
 - **Açık ve koyu tema**, istenirse Windows ayarını takip eder
 - **Dışa/içe aktarma** tek JSON dosyasıyla — başka bilgisayara taşımak iki adım
 - **Otomatik yedek** — son on hal; uygulama içinde listelenir, tek tıkla geri yüklenir
-- **İstatistik** — aylara göre saat, günlerin dağılımı, duruma göre haftalar
 - **Yazım denetimi** — arayüz dilinde, sağ tıkla düzeltme önerisi
 
 ## Verilerim nerede?
@@ -183,7 +182,7 @@ Hazır `.exe` dosyaları `release/` klasöründe oluşur.
 | Alan | Kullanılan |
 | --- | --- |
 | Çalışma ortamı | Electron 33 |
-| Arayüz | React 18, TypeScript, Tailwind CSS, Radix UI, Recharts |
+| Arayüz | React 18, TypeScript, Tailwind CSS, Radix UI |
 | Veri | better-sqlite3 üzerinden SQLite, WAL kipi |
 | Derleme | electron-vite, electron-builder |
 | PDF | Chromium `printToPDF` — gömülü font olmadan tam Unicode desteği |

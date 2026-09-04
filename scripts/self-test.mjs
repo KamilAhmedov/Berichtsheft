@@ -44,7 +44,15 @@ import {
   weekId,
   weeksInISOYear,
 } from '${posix(join(root, 'shared', 'dates.ts'))}'
-import { missingWeeks, plannedWeeks } from '${posix(join(root, 'src', 'lib', 'weeks.ts'))}'
+import {
+  addTrailingDay,
+  clampHours,
+  makeDays as makeWeekDays,
+  mergeFromPrevious,
+  missingWeeks,
+  plannedWeeks,
+  removeTrailingDay,
+} from '${posix(join(root, 'src', 'lib', 'weeks.ts'))}'
 
 const results = []
 function check(name, fn) {
@@ -355,6 +363,106 @@ app.whenReady().then(async () => {
     equal(s.language, 'tr', 'Sprache bleibt')
     equal(s.theme, 'dark', 'Erscheinungsbild bleibt')
     merge({ language: 'de', theme: 'system' })
+  })
+
+
+  /* --------------------------------------------- Bedienung des Editors -- */
+
+  check('Stunden bleiben zwischen null und vierundzwanzig', () => {
+    equal(clampHours(8), 8, 'ueblicher Wert')
+    equal(clampHours(-5), 0, 'negative Eingabe')
+    equal(clampHours(999), 24, 'zu grosse Eingabe')
+    equal(clampHours(Number.NaN), 0, 'keine Zahl')
+    equal(clampHours(7.5), 7.5, 'halbe Stunde bleibt')
+  })
+
+  check('Ein Tag kommt dazu und geht wieder — einzeln', () => {
+    const montag = '2026-03-16'
+    let days = makeWeekDays(fromISODate(montag))
+    equal(days.length, 5, 'Ausgangslage')
+
+    days = addTrailingDay(days, montag)
+    equal(days.length, 6, 'Samstag dazu')
+    equal(days[5].date, '2026-03-21', 'Datum des Samstags')
+
+    days = addTrailingDay(days, montag)
+    equal(days.length, 7, 'Sonntag dazu')
+    equal(days[6].date, '2026-03-22', 'Datum des Sonntags')
+
+    equal(addTrailingDay(days, montag).length, 7, 'mehr als sieben geht nicht')
+
+    days = removeTrailingDay(days)
+    equal(days.length, 6, 'Sonntag weg')
+    days = removeTrailingDay(days)
+    equal(days.length, 5, 'Samstag weg')
+    equal(removeTrailingDay(days).length, 5, 'unter fuenf geht nicht')
+  })
+
+  check('Eine Woche mit sieben Tagen verliert den Sonntag nicht', () => {
+    const montag = '2026-03-16'
+    let days = makeWeekDays(fromISODate(montag))
+    days = addTrailingDay(days, montag)
+    days = addTrailingDay(days, montag)
+    days[5] = { ...days[5], text: 'Samstagsdienst', hours: 4 }
+    days[6] = { ...days[6], text: 'Bereitschaft', hours: 2 }
+
+    // So verhielt sich der Editor frueher: er kuerzte pauschal auf fuenf Tage.
+    const frueher = days.slice(0, 5)
+    equal(frueher.length, 5, 'Alte Kuerzung')
+
+    const jetzt = removeTrailingDay(days)
+    equal(jetzt.length, 6, 'Nur der Sonntag geht')
+    equal(jetzt[5].text, 'Samstagsdienst', 'Der Samstag bleibt erhalten')
+  })
+
+  check('Vorwoche uebernehmen loescht keine eingetragenen Stunden', () => {
+    const montag = '2026-03-16'
+    const aktuell = {
+      ...weekEntry('2026-KW12', 12, 'daily'),
+      startDate: montag,
+      days: makeWeekDays(fromISODate(montag)).map((d) => ({ ...d, hours: 8 })),
+    }
+    // Die Vorwoche wurde als Wochentext gefuehrt und hat keine Tageszeilen.
+    const vorwoche = {
+      ...weekEntry('2026-KW11', 11, 'weekly'),
+      days: [],
+      company: 'Wochentext der Vorwoche',
+      school: 'Lernfeld 3',
+      instruction: '',
+    }
+
+    const merged = mergeFromPrevious(aktuell, vorwoche)
+    equal(merged.company, 'Wochentext der Vorwoche', 'Der Text kommt mit')
+    equal(merged.days.length, 5, 'Die eigenen Tage bleiben stehen')
+    equal(merged.days[0].hours, 8, 'Die eingetragenen Stunden bleiben')
+  })
+
+  check('Vorwoche uebernehmen setzt die Datumswerte dieser Woche', () => {
+    const aktuell = { ...weekEntry('2026-KW12', 12, 'daily'), startDate: '2026-03-16' }
+    const vorwoche = {
+      ...weekEntry('2026-KW11', 11, 'daily'),
+      startDate: '2026-03-09',
+      days: makeWeekDays(fromISODate('2026-03-09')).map((d, i) => ({ ...d, text: 'Tag ' + i })),
+    }
+    const merged = mergeFromPrevious(aktuell, vorwoche)
+    equal(merged.days[0].date, '2026-03-16', 'Montag dieser Woche')
+    equal(merged.days[4].date, '2026-03-20', 'Freitag dieser Woche')
+    equal(merged.days[0].text, 'Tag 0', 'Der Text kommt mit')
+  })
+
+  check('Vorwoche mit mehr Tagen sprengt die Woche nicht', () => {
+    const aktuell = { ...weekEntry('2026-KW12', 12, 'daily'), startDate: '2026-03-16' }
+    const vorwoche = {
+      ...weekEntry('2026-KW11', 11, 'daily'),
+      days: Array.from({ length: 9 }, (_, i) => ({
+        date: '2026-03-0' + (i + 1),
+        kind: 'company',
+        text: 'x',
+        hours: 8,
+      })),
+    }
+    const merged = mergeFromPrevious(aktuell, vorwoche)
+    assert(merged.days.length <= 7, 'Mehr als sieben Tage: ' + merged.days.length)
   })
 
   /* ------------------------------------------------------- Randfaelle -- */

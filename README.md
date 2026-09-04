@@ -75,7 +75,6 @@ Knopfdruck ein PDF im IHK-Stil.
 - **Helles und dunkles Design**, folgt auf Wunsch der Windows-Einstellung
 - **Export und Import** als eine JSON-Datei — Umzug auf einen anderen Rechner in zwei Schritten
 - **Automatische Sicherungen** — die letzten zehn Stände, in der App auflistbar und mit einem Klick zurückspielbar
-- **Statistik** — Stunden je Monat, Verteilung der Tage, Wochen nach Status
 - **Rechtschreibprüfung** in der Sprache der Oberfläche, Vorschläge per Rechtsklick
 
 ## Datenschutz
@@ -186,7 +185,7 @@ Die fertigen `.exe`-Dateien liegen anschließend im Ordner `release/`.
 | Bereich | Verwendet |
 | --- | --- |
 | Laufzeit | Electron 33 |
-| Oberfläche | React 18, TypeScript, Tailwind CSS, Radix UI, Recharts |
+| Oberfläche | React 18, TypeScript, Tailwind CSS, Radix UI |
 | Daten | SQLite über better-sqlite3, WAL-Modus |
 | Build | electron-vite, electron-builder |
 | PDF | Chromium `printToPDF` — volle Unicode-Unterstützung ohne eingebettete Schriften |
