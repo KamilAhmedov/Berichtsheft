@@ -164,6 +164,14 @@ function lastChangeAt(): number {
   return row ? Date.parse(row.value) : Number.NaN
 }
 
+/** Der Aenderungsstand, der zuletzt in eine Sicherung geflossen ist. */
+function backedUpChangeAt(): number {
+  const row = db.prepare('SELECT value FROM meta WHERE key = ?').get('backedUpChangeAt') as
+    | { value: string }
+    | undefined
+  return row ? Number(row.value) : Number.NaN
+}
+
 function setMeta(key: string, value: unknown): void {
   db.prepare(
     'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
@@ -369,6 +377,60 @@ function backupFiles(): string[] {
 }
 
 /**
+ * Nimmt einer Sicherung den WAL-Modus.
+ *
+ * Der Journalmodus steht im Dateikopf und wird mitkopiert. Jedes Öffnen einer
+ * WAL-Datenbank — auch nur lesend, wie beim Auflisten — legt daneben eine
+ * -wal- und eine -shm-Datei an. Die zählt der Aufräumer nicht mit und löscht
+ * sie nie: nach jedem Blick in die Sicherungsliste bleibt Müll liegen, und
+ * wenn die Sicherung später wegrotiert, bleiben ihre Reste für immer.
+ *
+ * Eine Sicherung wird ohnehin nie beschrieben. Ohne WAL ist sie eine einzelne,
+ * in sich vollständige Datei — das ist auch fürs Kopieren auf einen Stick das
+ * Richtige.
+ */
+function sealBackup(path: string): void {
+  try {
+    const copy = new Database(path)
+    try {
+      copy.pragma('journal_mode = DELETE')
+    } finally {
+      copy.close()
+    }
+  } catch {
+    /* Eine unlesbare Sicherung bleibt, wie sie ist. */
+  }
+}
+
+/**
+ * Entfernt -wal- und -shm-Dateien, die keine Sicherung mehr brauchen.
+ *
+ * Betrifft vor allem ältere Installationen: dort sind die Sicherungen noch im
+ * WAL-Modus entstanden und haben bei jedem Auflisten Reste hinterlassen.
+ */
+function removeStrayFiles(): void {
+  let files: string[]
+  try {
+    files = readdirSync(backupDir)
+  } catch {
+    return
+  }
+  const kept = new Set(files.filter((f) => f.endsWith('.db')))
+  for (const file of files) {
+    const base = file.replace(/-(wal|shm)$/, '')
+    if (base === file) continue // keine Nebendatei
+    // Zu einer Sicherung, die es noch gibt, gehört nach dem Versiegeln keine
+    // Nebendatei mehr — sie stammt dann aus einem früheren Auflisten.
+    if (kept.has(base)) sealBackup(join(backupDir, base))
+    try {
+      rmSync(join(backupDir, file))
+    } catch {
+      /* Bleibt sie eben liegen — beim nächsten Start erneut versuchen. */
+    }
+  }
+}
+
+/**
  * Legt eine Kopie der Datenbank an und haelt nur die letzten KEEP_BACKUPS Stueck.
  *
  * Hat sich seit der letzten Sicherung nichts geaendert, entfaellt die Kopie —
@@ -380,16 +442,16 @@ export function rotateBackup(): void {
   const existing = backupFiles()
   const newest = existing[existing.length - 1]
   if (newest) {
-    try {
-      // Der Zeitstempel der Datenbankdatei taugt nicht als Massstab: im
-      // WAL-Modus laufen Schreibvorgaenge zunaechst in die -wal-Datei, die
-      // Hauptdatei bleibt unberuehrt. Deshalb der selbst gefuehrte Stand.
-      const changed = lastChangeAt()
-      const backedUp = statSync(join(backupDir, newest)).mtimeMs
-      if (Number.isFinite(changed) && changed <= backedUp) return
-    } catch {
-      /* Im Zweifel lieber sichern. */
-    }
+    // Verglichen werden zwei selbst gefuehrte Staende, keine Dateizeiten.
+    //
+    // Zeitstempel von Dateien taugen hier doppelt nicht: im WAL-Modus bleibt
+    // die Hauptdatei beim Schreiben unberuehrt, und copyFileSync uebernimmt
+    // unter Windows den Zeitstempel der Quelle statt die Uhrzeit der Kopie.
+    // Beides zusammen liess die Pruefung je nach Sekundenbruchteil mal so und
+    // mal anders ausfallen.
+    const changed = lastChangeAt()
+    const backedUp = backedUpChangeAt()
+    if (Number.isFinite(changed) && Number.isFinite(backedUp) && changed <= backedUp) return
   }
 
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
@@ -397,7 +459,14 @@ export function rotateBackup(): void {
     // Offene Transaktionen in die Hauptdatei schreiben, sonst fehlen der
     // Kopie genau die zuletzt gespeicherten Wochen.
     db.pragma('wal_checkpoint(TRUNCATE)')
-    copyFileSync(dbPath, join(backupDir, `berichtsheft-${stamp}.db`))
+    const copy = join(backupDir, `berichtsheft-${stamp}.db`)
+    copyFileSync(dbPath, copy)
+    sealBackup(copy)
+    // Festhalten, welcher Aenderungsstand gesichert wurde. Daran erkennt der
+    // naechste Start, dass sich seither nichts getan hat.
+    db.prepare(
+      'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+    ).run('backedUpChangeAt', String(lastChangeAt()))
   } catch {
     return // Ein fehlgeschlagenes Backup darf die App nie blockieren.
   }
@@ -410,6 +479,7 @@ export function rotateBackup(): void {
       /* ignorieren */
     }
   }
+  removeStrayFiles()
 }
 
 /**
@@ -418,17 +488,29 @@ export function rotateBackup(): void {
  * das nichts und erspart das Raten beim Zurueckspielen.
  */
 export function listBackups(): BackupInfo[] {
-  return backupFiles()
+  const list = backupFiles()
     .map((file): BackupInfo => {
       const path = join(backupDir, file)
+      // Sicherungen aus älteren Fassungen sind noch im WAL-Modus und legten
+      // beim Lesen Nebendateien an. Vorher versiegeln, dann ist Ruhe.
+      sealBackup(path)
       let entryCount = 0
+      let copy: Database.Database | undefined
       try {
-        const copy = new Database(path, { readonly: true })
+        copy = new Database(path, { readonly: true })
         const row = copy.prepare('SELECT COUNT(*) AS n FROM entries').get() as { n: number }
         entryCount = row?.n ?? 0
-        copy.close()
       } catch {
         entryCount = 0 // Eine unlesbare Sicherung soll die Liste nicht sprengen.
+      } finally {
+        // Ohne das bliebe bei einer beschädigten Sicherung ein Zugriff offen.
+        // Unter Windows liesse sich die Datei dann nie wieder löschen und der
+        // Ordner wüchse bei jedem Blick in die Liste weiter.
+        try {
+          copy?.close()
+        } catch {
+          /* ignorieren */
+        }
       }
       let sizeBytes = 0
       let createdAt = ''
@@ -442,6 +524,9 @@ export function listBackups(): BackupInfo[] {
       return { file, createdAt, sizeBytes, entryCount }
     })
     .reverse() // neueste zuerst
+
+  removeStrayFiles()
+  return list
 }
 
 /**

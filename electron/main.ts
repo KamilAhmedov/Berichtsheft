@@ -21,6 +21,14 @@ if (!app.requestSingleInstanceLock()) {
   app.quit()
 }
 
+/*
+ * Chromium legt einen Netzwerk-Cache an, der über die Zeit auf hunderte
+ * Megabyte wachsen darf. Diese App lädt ihre Oberfläche aus lokalen Dateien;
+ * zu cachen gibt es praktisch nichts. Acht Megabyte sind reichlich und
+ * verhindern, dass sich im Benutzerprofil unbemerkt Ballast ansammelt.
+ */
+app.commandLine.appendSwitch('disk-cache-size', String(8 * 1024 * 1024))
+
 let mainWindow: BrowserWindow | null = null
 
 const TITLEBAR_LIGHT = { color: '#ffffff', symbolColor: '#334155', height: 40 }
@@ -66,8 +74,14 @@ function createWindow(): void {
 /* -------------------------------------------------- Rechtschreibpruefung ---- */
 
 /**
- * Chromium bringt die Woerterbuecher mit. Gepflegt wird die Sprache der
- * Oberflaeche, dazu Englisch — Fachbegriffe im Bericht sind oft englisch.
+ * Geprueft wird in der Sprache der Oberflaeche, dazu Englisch — Fachbegriffe
+ * im Bericht sind oft englisch.
+ *
+ * Das Woerterbuch bringt Chromium nicht mit: es laedt die passende .bdic-Datei
+ * beim ersten Mal herunter und legt sie im Benutzerprofil ab. Je Sprache sind
+ * das mehrere Megabyte, und sie bleiben liegen, auch wenn die Sprache spaeter
+ * gewechselt wird. Mehr als die drei Sprachen der App koennen es aber nicht
+ * werden, und ohne Netz laeuft alles weiter — nur ohne rote Unterstreichung.
  */
 function applySpellCheckLanguage(language: string): void {
   const session = mainWindow?.webContents.session
