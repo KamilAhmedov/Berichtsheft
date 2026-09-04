@@ -70,12 +70,12 @@ otomatik hesaplanır, eksik haftalar gösterilir, tek tuşla IHK tarzı PDF üre
 - **Açık ve koyu tema**, istenirse Windows ayarını takip eder
 - **Dışa/içe aktarma** tek JSON dosyasıyla — başka bilgisayara taşımak iki adım
 - **Otomatik yedek** — son on hal; uygulama içinde listelenir, tek tıkla geri yüklenir
-- **Yazım denetimi** — arayüz dilinde, sağ tıkla düzeltme önerisi
+- **Almanca yazım denetimi** — sağ tıkla düzeltme önerisi
 
 ## Verilerim nerede?
 
-Uygulamanın **sunucusu, hesabı ve internet bağlantısı yoktur**. Her şey bilgisayarındaki
-bir SQLite dosyasında durur:
+Uygulamanın **sunucusu, hesabı ve telemetrisi yoktur**. Hiçbir şey gönderilmez, ölçülmez,
+kayıt açılmaz. Her şey bilgisayarındaki bir SQLite dosyasında durur:
 
 ```
 %APPDATA%\Berichtsheft\
@@ -88,6 +88,11 @@ Uygulamayı kaldırsan bile bu klasör silinmez.
 
 Başka bir bilgisayara taşımak için: **Ayarlar → Verileri dışa aktar** ile JSON dosyasını
 kaydet, diğer bilgisayarda **Verileri içe aktar** ile o dosyayı seç. Hepsi bu.
+
+**Tam olsun diye — tek ağ bağlantısı:** Yazım denetimi için Chromium ilk seferde bir
+sözlük indirir (Almanca ve İngilizce, bir kez, birkaç megabayt). Bu Chromium’un kendi
+özelliği, uygulamanın değil — bu sırada hiçbir rapor, isim veya kimlik gönderilmez.
+İnternet yoksa her şey aynen çalışır, sadece kırmızı altı çizgi olmaz.
 
 ## Kurulum
 

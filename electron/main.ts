@@ -56,7 +56,7 @@ function createWindow(): void {
   mainWindow.once('ready-to-show', () => mainWindow?.show())
 
   registerContextMenu()
-  applySpellCheckLanguage(db.getSettings().language)
+  applySpellCheckLanguage()
 
   // Externe Links gehören in den Standardbrowser, nicht in die App.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -74,22 +74,33 @@ function createWindow(): void {
 /* -------------------------------------------------- Rechtschreibpruefung ---- */
 
 /**
- * Geprueft wird in der Sprache der Oberflaeche, dazu Englisch — Fachbegriffe
- * im Bericht sind oft englisch.
+ * Geprueft wird Deutsch — unabhaengig davon, in welcher Sprache die Menues
+ * stehen.
  *
- * Das Woerterbuch bringt Chromium nicht mit: es laedt die passende .bdic-Datei
- * beim ersten Mal herunter und legt sie im Benutzerprofil ab. Je Sprache sind
- * das mehrere Megabyte, und sie bleiben liegen, auch wenn die Sprache spaeter
- * gewechselt wird. Mehr als die drei Sprachen der App koennen es aber nicht
- * werden, und ohne Netz laeuft alles weiter — nur ohne rote Unterstreichung.
+ * Der Ausbildungsnachweis wird auf Deutsch gefuehrt, unterschrieben und bei
+ * der Kammer eingereicht; etwas anderes steht dort nie drin. Die Sprache der
+ * Oberflaeche sagt darueber nichts aus: wer Deutsch gerade erst lernt, stellt
+ * die Menues auf die eigene Sprache und schreibt trotzdem deutsche Berichte.
+ * Vorher hing die Pruefung an der Oberflaechensprache — bei tuerkischen Menues
+ * wurde jedes korrekte deutsche Wort rot unterstrichen. Das war schlechter
+ * als gar keine Pruefung.
+ *
+ * Englisch kommt dazu, weil Fachbegriffe im Bericht oft englisch sind.
+ *
+ * Das Woerterbuch bringt Chromium nicht mit: es laedt die .bdic-Dateien beim
+ * ersten Mal herunter und legt sie im Benutzerprofil ab. Weil die Auswahl
+ * jetzt fest steht, bleibt es bei diesen beiden — vorher konnte sich fuer
+ * jede Menuesprache eines ansammeln. Ohne Netz laeuft alles weiter, nur ohne
+ * rote Unterstreichung.
  */
-function applySpellCheckLanguage(language: string): void {
+function applySpellCheckLanguage(): void {
   const session = mainWindow?.webContents.session
   if (!session) return
   const available = session.availableSpellCheckerLanguages
-  const wanted = [language, 'en-US'].filter((code) => available.includes(code))
+  const wanted = ['de-DE', 'en-US'].filter((code) => available.includes(code))
+  if (!wanted.length) return
   try {
-    session.setSpellCheckerLanguages(wanted.length ? wanted : ['en-US'])
+    session.setSpellCheckerLanguages(wanted)
   } catch {
     /* Ohne Woerterbuch laeuft die App weiter, nur ohne Unterstreichung. */
   }
@@ -165,10 +176,6 @@ function registerIpc(): void {
   handle('storage:info', () => db.storageInfo())
   handle<BackupInfo[]>('backup:list', () => db.listBackups())
   handle<AppSnapshot>('backup:restore', (file: string) => db.restoreBackup(file))
-
-  handle<void>('spellcheck:language', (language: string) => {
-    applySpellCheckLanguage(language)
-  })
 
   handle<void>('shell:openDataDir', async () => {
     const dir = db.storageInfo().dataDir

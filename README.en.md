@@ -71,12 +71,12 @@ produces a PDF in the classic IHK style.
 - **Light and dark theme**, optionally following the Windows setting
 - **Export and import** as a single JSON file — moving to another machine takes two steps
 - **Automatic backups** — the last ten states, listed in the app and restorable with one click
-- **Spell checking** in the interface language, suggestions on right-click
+- **German spell checking**, suggestions on right-click
 
 ## Privacy
 
-The app has **no server, no account and no network access**. Everything lives in a SQLite
-file on your own machine:
+The app has **no server, no account and no telemetry**. Nothing is transmitted, measured or
+signed into. Everything lives in a SQLite file on your own machine:
 
 ```
 %APPDATA%\Berichtsheft\
@@ -86,6 +86,11 @@ file on your own machine:
 
 Open that folder from within the app via **Settings → Data → Open folder**.
 Uninstalling the app does not delete it.
+
+**For completeness — the one network connection:** For spell checking, Chromium downloads
+a dictionary the first time (German and English, once, a few megabytes). That is a built-in
+Chromium feature, not one of this program — no reports, names or identifiers are sent.
+Without internet everything works as before, just without red underlines.
 
 ## Installation
 

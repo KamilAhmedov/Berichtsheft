@@ -19,7 +19,8 @@
     "pdf:check": "node scripts/pdf-check.mjs",
     "selftest": "node scripts/self-test.mjs",
     "uishot": "node scripts/ui-shot.mjs",
-    "backup:check": "node scripts/backup-check.mjs"
+    "backup:check": "node scripts/backup-check.mjs",
+    "perf:check": "node scripts/perf-check.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0"

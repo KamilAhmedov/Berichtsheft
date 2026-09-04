@@ -75,12 +75,13 @@ Knopfdruck ein PDF im IHK-Stil.
 - **Helles und dunkles Design**, folgt auf Wunsch der Windows-Einstellung
 - **Export und Import** als eine JSON-Datei — Umzug auf einen anderen Rechner in zwei Schritten
 - **Automatische Sicherungen** — die letzten zehn Stände, in der App auflistbar und mit einem Klick zurückspielbar
-- **Rechtschreibprüfung** in der Sprache der Oberfläche, Vorschläge per Rechtsklick
+- **Rechtschreibprüfung auf Deutsch**, Vorschläge per Rechtsklick
 
 ## Datenschutz
 
-Die App hat **keinen Server, kein Konto und keine Internetverbindung**. Alles liegt in einer
-SQLite-Datei auf dem eigenen Rechner:
+Die App hat **keinen Server, kein Konto und keine Telemetrie**. Es wird nichts übertragen,
+nichts gemessen und nichts angemeldet. Alles liegt in einer SQLite-Datei auf dem eigenen
+Rechner:
 
 ```
 %APPDATA%\Berichtsheft\
@@ -90,6 +91,12 @@ SQLite-Datei auf dem eigenen Rechner:
 
 Den Ordner öffnet man in der App direkt über **Einstellungen → Daten → Ordner öffnen**.
 Eine Deinstallation löscht diesen Ordner nicht.
+
+**Der Vollständigkeit halber — die einzige Netzwerkverbindung:** Für die
+Rechtschreibprüfung lädt Chromium beim ersten Mal ein Wörterbuch herunter (Deutsch und
+Englisch, einmalig, einige Megabyte). Das ist eine eingebaute Funktion von Chromium, keine
+des Programms — es werden dabei keine Berichte, keine Namen und keine Kennungen
+übertragen. Ohne Internet läuft alles unverändert weiter, nur ohne rote Unterstreichung.
 
 ## Installation
 

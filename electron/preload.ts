@@ -38,7 +38,6 @@ const api = {
   storageInfo: () => call<StorageInfo>('storage:info'),
   listBackups: () => call<BackupInfo[]>('backup:list'),
   restoreBackup: (file: string) => call<AppSnapshot>('backup:restore', file),
-  setSpellCheckLanguage: (language: string) => call<void>('spellcheck:language', language),
   openDataDir: () => call<void>('shell:openDataDir'),
   showItemInFolder: (path: string) => call<void>('shell:showItem', path),
   setNativeTheme: (isDark: boolean) => call<void>('theme:set', isDark),
