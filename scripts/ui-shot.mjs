@@ -198,7 +198,11 @@ app.whenReady().then(async () => {
   const onWeeks = await win.webContents.executeJavaScript(
     "(() => { const b = [...document.querySelectorAll('nav button')]" +
       ".find((x) => x.textContent.trim() === 'Wochen');" +
-      " if (!b) return false; b.click(); return true; })()",
+      " if (!b) return false;" +
+        " const opts = { bubbles: true, cancelable: true, pointerType: 'mouse', button: 0 };" +
+        " b.dispatchEvent(new PointerEvent('pointerdown', opts));" +
+        " b.dispatchEvent(new PointerEvent('pointerup', opts));" +
+        " b.click(); return true; })()",
   )
   if (onWeeks) {
     await new Promise((r) => setTimeout(r, 800))

@@ -47,11 +47,15 @@ import {
 import {
   addTrailingDay,
   clampHours,
+  formatHours,
+  isEmptyEntry,
+  parseHours,
   makeDays as makeWeekDays,
   mergeFromPrevious,
   missingWeeks,
   plannedWeeks,
   removeTrailingDay,
+  totalHours,
 } from '${posix(join(root, 'src', 'lib', 'weeks.ts'))}'
 
 const results = []
@@ -366,6 +370,197 @@ app.whenReady().then(async () => {
   })
 
 
+
+  /* ------------------------------------------------- Weitere Fehlersuche -- */
+
+  check('Stundenangabe mit Komma geht nicht verloren', () => {
+    equal(parseHours('7,5'), 7.5, 'deutsches Komma')
+    equal(parseHours('7.5'), 7.5, 'Punkt')
+    equal(parseHours(' 8 '), 8, 'Leerzeichen')
+    equal(parseHours(''), 0, 'leer')
+    equal(parseHours('abc'), 0, 'Unsinn')
+    equal(parseHours('-3'), 0, 'negativ')
+    equal(parseHours('99'), 24, 'zu gross')
+    equal(parseHours('0,25'), 0.25, 'Viertelstunde mit Komma')
+  })
+
+  check('Leere Stundenangabe bleibt leer und wird nicht zu null', () => {
+    equal(formatHours(0, 'de-DE'), '', 'null bleibt leer')
+    equal(formatHours(7.5, 'de-DE'), '7,5', 'deutsche Schreibweise')
+    equal(formatHours(8, 'en-GB'), '8', 'englische Schreibweise')
+  })
+
+  check('Nur Leerzeichen zaehlen nicht als Inhalt', () => {
+    const leer = weekEntry('2026-KW03', 3, 'weekly', { company: '     ' })
+    assert(isEmptyEntry(leer), 'Eine Woche aus Leerzeichen gilt als leer')
+    const voll = weekEntry('2026-KW03', 3, 'weekly', { company: 'Text' })
+    assert(!isEmptyEntry(voll), 'Eine Woche mit Text gilt als gefuellt')
+  })
+
+  check('Sicherung mit doppelten Bausteinen kippt den Import nicht', () => {
+    const snap = db.snapshot()
+    const doppelt = {
+      ...snap,
+      entries: [],
+      templates: [
+        { id: 'x1', title: 'A', field: 'company', text: 'eins' },
+        { id: 'x1', title: 'A', field: 'company', text: 'zwei' },
+      ],
+    }
+    const restored = db.restore(doppelt)
+    equal(restored.templates.length, 1, 'Der Baustein kommt genau einmal an')
+    db.restore(snap)
+  })
+
+  check('Sicherung mit doppelten Wochen kippt den Import nicht', () => {
+    const snap = db.snapshot()
+    const eintrag = weekEntry('2026-KW02', 2, 'weekly', { company: 'erste Fassung' })
+    const doppelt = {
+      ...snap,
+      templates: [],
+      entries: [eintrag, { ...eintrag, company: 'zweite Fassung' }],
+    }
+    const restored = db.restore(doppelt)
+    equal(restored.entries.length, 1, 'Die Woche kommt genau einmal an')
+    equal(restored.entries[0].company, 'zweite Fassung', 'Die spaetere Fassung gewinnt')
+    db.restore(snap)
+  })
+
+  check('Unbekannter Status verhindert das Speichern nicht', () => {
+    const seltsam = weekEntry('2026-KW01', 1, 'weekly', { status: 'irgendwas' })
+    const saved = db.saveEntry(seltsam)
+    assert(saved.id === '2026-KW01', 'Die Woche wurde gespeichert')
+    db.deleteEntry(saved.id)
+  })
+
+  check('Anfuehrungszeichen im Text zerlegen das PDF nicht', () => {
+    const heikel = 'Er sagte "Hallo" & <b>fett</b>'
+    const entry = weekEntry('2026-KW05', 5, 'weekly', { company: heikel })
+    const html = buildReportHtml([entry], profile, 'classic', 'de')
+    assert(!html.includes('<b>fett</b>'), 'Rohes HTML im PDF')
+    assert(html.includes('&lt;b&gt;'), 'Escaping fehlt')
+    assert(html.includes('&quot;Hallo&quot;') || html.includes('Hallo'), 'Text fehlt')
+    assert(html.includes('&amp;'), 'Kaufmanns-Und nicht maskiert')
+  })
+
+  check('Zeilenumbrueche im Text ueberstehen den Weg ins PDF', () => {
+    const entry = weekEntry('2026-KW05', 5, 'weekly', {
+      company: ['Zeile eins', 'Zeile zwei'].join(String.fromCharCode(10)),
+    })
+    const html = buildReportHtml([entry], profile, 'classic', 'de')
+    assert(html.includes('Zeile eins<br>Zeile zwei'), 'Umbruch fehlt')
+  })
+
+  check('Ein Tag ohne Text erscheint als Strich, nicht als Luecke', () => {
+    const entry = weekEntry('2026-KW05', 5, 'daily', {
+      days: [
+        { date: '2026-01-26', kind: 'company', text: 'etwas', hours: 8 },
+        { date: '2026-01-27', kind: 'company', text: '', hours: 0 },
+      ],
+    })
+    const html = buildReportHtml([entry], profile, 'classic', 'de')
+    equal((html.match(/<tr style="height/g) || []).length, 2, 'Beide Tage stehen im PDF')
+  })
+
+  check('Abwesenheitstage stehen mit ihrer Art im PDF', () => {
+    const entry = weekEntry('2026-KW05', 5, 'daily', {
+      days: [
+        { date: '2026-01-26', kind: 'sick', text: '', hours: 0 },
+        { date: '2026-01-27', kind: 'vacation', text: '', hours: 0 },
+      ],
+    })
+    const html = buildReportHtml([entry], profile, 'de' === 'de' ? 'classic' : 'modern', 'de')
+    assert(html.includes('Krank'), 'Krank fehlt')
+    assert(html.includes('Urlaub'), 'Urlaub fehlt')
+  })
+
+  check('Gesamtstunden im PDF stimmen mit der Summe ueberein', () => {
+    const entry = weekEntry('2026-KW05', 5, 'daily', {
+      days: [
+        { date: '2026-01-26', kind: 'company', text: 'a', hours: 7.5 },
+        { date: '2026-01-27', kind: 'company', text: 'b', hours: 8 },
+        { date: '2026-01-28', kind: 'sick', text: '', hours: 0 },
+      ],
+    })
+    equal(totalHours(entry), 15.5, 'Summe im Programm')
+    const html = buildReportHtml([entry], profile, 'classic', 'de')
+    assert(html.includes('15,5'), 'Summe fehlt im PDF')
+  })
+
+  check('Ein Profil mit Sonderzeichen bricht das PDF nicht', () => {
+    const p = { ...profile, fullName: "O Brien & Söhne <GmbH>", company: '"Test" AG' }
+    const html = buildReportHtml([db.listEntries()[0]], p, 'classic', 'de')
+    assert(!html.includes('<GmbH>'), 'Rohes HTML aus dem Profil')
+    assert(html.includes('&lt;GmbH&gt;'), 'Escaping im Profil fehlt')
+  })
+
+  check('Eine Woche ohne Wochentexte erzeugt trotzdem einen Abschnitt', () => {
+    const entry = weekEntry('2026-KW05', 5, 'weekly', { company: '', school: '', instruction: '' })
+    const html = buildReportHtml([entry], profile, 'classic', 'de')
+    assert(html.includes('Betriebliche Tätigkeiten'), 'Der Hauptabschnitt fehlt')
+  })
+
+  check('Die Einstellungen ueberstehen einen unbekannten Wert', () => {
+    const vorher = db.getSettings()
+    db.setSettings({ ...vorher, language: 'xx' })
+    const s = db.getSettings()
+    assert(typeof s.language === 'string', 'Sprache ist verlorengegangen')
+    db.setSettings(vorher)
+  })
+
+
+  check('Wiederholtes Plus und Minus verfaelscht die Stunden nicht', () => {
+    let v = clampHours(0.7)
+    for (let i = 0; i < 6; i++) v = clampHours(v + 0.5)
+    for (let i = 0; i < 6; i++) v = clampHours(v - 0.5)
+    equal(v, 0.7, 'Nach hin und zurueck derselbe Wert')
+    equal(clampHours(0.7 + 0.1), 0.8, 'Keine Fliesskomma-Reste')
+  })
+
+  check('Die Wochensumme bleibt eine saubere Zahl', () => {
+    const entry = weekEntry('2026-KW09', 9, 'daily', {
+      days: [
+        { date: '2026-02-23', kind: 'company', text: 'a', hours: 0.7 },
+        { date: '2026-02-24', kind: 'company', text: 'b', hours: 0.1 },
+        { date: '2026-02-25', kind: 'company', text: 'c', hours: 8 },
+      ],
+    })
+    equal(totalHours(entry), 8.8, 'Summe ohne Fliesskomma-Reste')
+  })
+  /* --------------------------------------- Jahresweise Ausgabe als PDF -- */
+
+  check('Ein Ausbildungsjahr laesst sich einzeln ausgeben', () => {
+    const alle = [
+      weekEntry('2026-KW10', 10, 'weekly', { trainingYear: 1, company: 'erstes Jahr A' }),
+      weekEntry('2026-KW11', 11, 'weekly', { trainingYear: 1, company: 'erstes Jahr B' }),
+      weekEntry('2026-KW12', 12, 'weekly', { trainingYear: 2, company: 'zweites Jahr' }),
+    ]
+    const jahrEins = alle.filter((e) => e.trainingYear === 1)
+    equal(jahrEins.length, 2, 'Wochen des ersten Jahres')
+    const html = buildReportHtml(jahrEins, profile, 'classic', 'de')
+    equal((html.match(/class="sheet"/g) || []).length, 2, 'Ein Blatt je Woche')
+    assert(!html.includes('zweites Jahr'), 'Fremdes Jahr im Ausdruck')
+  })
+
+  check('Die Wochen stehen im Ausdruck in der richtigen Reihenfolge', () => {
+    const alle = [
+      weekEntry('2026-KW10', 10, 'weekly', { company: 'frueh' }),
+      weekEntry('2026-KW11', 11, 'weekly', { company: 'spaet' }),
+    ]
+    const html = buildReportHtml(alle, profile, 'classic', 'de')
+    assert(html.indexOf('frueh') < html.indexOf('spaet'), 'Reihenfolge verdreht')
+  })
+
+  /*
+   * Ein PDF ohne Seite waere unbrauchbar. Statt dessen kommt ein Hinweisblatt.
+   * Ueber die Oberflaeche ist das ohnehin nicht erreichbar: der Knopf ist ohne
+   * Wochen gesperrt und jedes Ausbildungsjahr im Menue hat mindestens eine.
+   */
+  check('Eine leere Auswahl ergibt ein Hinweisblatt statt eines leeren PDF', () => {
+    const html = buildReportHtml([], profile, 'classic', 'de')
+    equal((html.match(/class="sheet"/g) || []).length, 1, 'Genau ein Hinweisblatt')
+    assert(!html.includes('undefined'), 'Luecke im Hinweisblatt')
+  })
   /* --------------------------------------------- Bedienung des Editors -- */
 
   check('Stunden bleiben zwischen null und vierundzwanzig', () => {

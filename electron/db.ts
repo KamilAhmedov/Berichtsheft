@@ -341,7 +341,14 @@ export function restore(data: AppSnapshot): AppSnapshot {
     for (const e of d.entries) {
       upsert.run(toRowParams({ ...e, days: e.days ?? [] }, e.updatedAt || now))
     }
-    const tpl = db.prepare('INSERT INTO templates (id, title, field, text) VALUES (?, ?, ?, ?)')
+    // Wie beim Speichern einzelner Bausteine: kommt eine Kennung doppelt vor —
+    // etwa in einer von Hand zusammengesetzten Sicherung —, gewinnt der spätere
+    // Eintrag. Ohne das bricht die gesamte Wiederherstellung ab.
+    const tpl = db.prepare(
+      `INSERT INTO templates (id, title, field, text) VALUES (?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         title = excluded.title, field = excluded.field, text = excluded.text`,
+    )
     for (const t of d.templates) tpl.run(t.id, t.title, t.field, t.text)
     setMeta('profile', d.profile)
     setMeta('settings', d.settings)

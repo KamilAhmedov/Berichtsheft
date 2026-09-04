@@ -69,6 +69,12 @@ const de = {
   clearSelection: 'Auswahl aufheben',
   exportSelectionPdf: 'Auswahl als PDF',
   exportAllPdf: 'Alles als PDF',
+  exportPdfMenu: 'Als PDF',
+  exportEverything: 'Alle Wochen',
+  exportTrainingYear: 'Ausbildungsjahr',
+  exportFiltered: 'Was gerade angezeigt wird',
+  exportCountWeeks: '{n} Wochen',
+  exportNothing: 'Für diese Auswahl gibt es keine Wochen.',
 
   // Editor
   editorTitleNew: 'Neuer Wochenbericht',
@@ -197,7 +203,7 @@ const de = {
     'Tipp: fasse die Woche in ganzen Sätzen zusammen und nenne die eingesetzten Werkzeuge und Verfahren.',
   hoursShort: 'Std.',
   hoursPerDay: 'Stunden je Wochentag',
-  hoursPerDayHint: 'Erscheinen im PDF in der Stundenspalte neben den Wochentagen.',
+  hoursPerDayHint: 'Werden im PDF zur Gesamtstundenzahl der Woche zusammengezählt.',
   showBackups: 'Sicherungen anzeigen',
   backupsTitle: 'Automatische Sicherungen',
   backupsIntro:
@@ -295,6 +301,12 @@ const en: Dict = {
   clearSelection: 'Clear selection',
   exportSelectionPdf: 'Selection as PDF',
   exportAllPdf: 'Everything as PDF',
+  exportPdfMenu: 'As PDF',
+  exportEverything: 'All weeks',
+  exportTrainingYear: 'Training year',
+  exportFiltered: 'What is currently shown',
+  exportCountWeeks: '{n} weeks',
+  exportNothing: 'There are no weeks for this selection.',
 
   editorTitleNew: 'New weekly report',
   editorTitleEdit: 'Edit weekly report',
@@ -417,7 +429,7 @@ const en: Dict = {
     'Tip: summarise the week in full sentences and name the tools and methods you used.',
   hoursShort: 'h',
   hoursPerDay: 'Hours per weekday',
-  hoursPerDayHint: 'Printed in the hours column next to the weekdays.',
+  hoursPerDayHint: 'Added up to the total hours of the week in the PDF.',
   showBackups: 'Show backups',
   backupsTitle: 'Automatic backups',
   backupsIntro:
@@ -512,6 +524,12 @@ const tr: Dict = {
   clearSelection: 'Seçimi kaldır',
   exportSelectionPdf: 'Seçilenleri PDF yap',
   exportAllPdf: 'Tümünü PDF yap',
+  exportPdfMenu: 'PDF olarak',
+  exportEverything: 'Bütün haftalar',
+  exportTrainingYear: 'Eğitim yılı',
+  exportFiltered: 'Şu an görünenler',
+  exportCountWeeks: '{n} hafta',
+  exportNothing: 'Bu seçim için hafta yok.',
 
   editorTitleNew: 'Yeni haftalık rapor',
   editorTitleEdit: 'Haftalık raporu düzenle',
@@ -634,7 +652,7 @@ const tr: Dict = {
     'İpucu: haftayı tam cümlelerle özetle ve kullandığın araç ve yöntemleri belirt.',
   hoursShort: 'sa.',
   hoursPerDay: 'Gün başına saat',
-  hoursPerDayHint: 'PDF çıktısında günlerin yanındaki saat sütununda görünür.',
+  hoursPerDayHint: 'PDF çıktısında haftanın toplam saatine eklenir.',
   showBackups: 'Yedekleri göster',
   backupsTitle: 'Otomatik yedekler',
   backupsIntro:

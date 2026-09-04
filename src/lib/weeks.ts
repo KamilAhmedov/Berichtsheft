@@ -51,7 +51,8 @@ export function makeEntry(
 
 /** Die Stunden stehen bei den Tagen — in beiden Erfassungsarten. */
 export function totalHours(e: WeekEntry): number {
-  return (e.days ?? []).reduce((sum, d) => sum + (d.hours || 0), 0)
+  const sum = (e.days ?? []).reduce((total, d) => total + (d.hours || 0), 0)
+  return Math.round(sum * 100) / 100
 }
 
 export function isEmptyEntry(e: WeekEntry): boolean {
@@ -103,9 +104,16 @@ export function currentWeek(today = new Date()): { isoYear: number; isoWeek: num
 /* --------------------------------------------------- Tageszeilen bearbeiten */
 
 /** Stunden bleiben im sinnvollen Bereich — auch bei Eingabe über die Tastatur. */
+/*
+ * Stunden werden auf zwei Nachkommastellen festgezurrt. Sonst schleppt jeder
+ * Klick auf plus oder minus die Ungenauigkeit von Fliesskommazahlen weiter —
+ * aus 0,7 + 0,1 wird sonst 0,7999999999999999, und das landet so in der
+ * Datenbank und in jeder spaeteren Summe.
+ */
 export function clampHours(value: number): number {
   if (!Number.isFinite(value)) return 0
-  return Math.min(24, Math.max(0, value))
+  const inRange = Math.min(24, Math.max(0, value))
+  return Math.round(inRange * 100) / 100
 }
 
 /**
@@ -154,4 +162,23 @@ export function mergeFromPrevious(current: WeekEntry, previous: WeekEntry): Week
     instruction: previous.instruction,
     days,
   }
+}
+
+/**
+ * Liest eine Stundenangabe aus dem Eingabefeld.
+ *
+ * Auf deutschen Tastaturen wird das Komma als Dezimalzeichen getippt; ohne
+ * Umwandlung ergaebe "7,5" keine Zahl und die Eingabe waere stillschweigend
+ * verloren. Leere Eingaben zaehlen als null.
+ */
+export function parseHours(raw: string): number {
+  const text = raw.trim().replace(',', '.')
+  if (!text) return 0
+  return clampHours(Number(text))
+}
+
+/** Stundenangabe fuer das Eingabefeld — null bleibt leer, nicht "0". */
+export function formatHours(value: number, locale: string): string {
+  if (!value) return ''
+  return value.toLocaleString(locale, { maximumFractionDigits: 2 })
 }

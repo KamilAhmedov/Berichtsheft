@@ -30,10 +30,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { HoursInput } from '@/components/HoursInput'
 import { useApp } from '@/hooks/useApp'
 import {
   addTrailingDay,
-  clampHours,
   makeDays,
   mergeFromPrevious,
   removeTrailingDay,
@@ -119,17 +119,12 @@ function DayRow({
             </SelectContent>
           </Select>
 
-          <Input
-            type="number"
-            min={0}
-            max={24}
-            step={0.5}
-            value={day.hours || ''}
+          <HoursInput
+            value={day.hours}
             disabled={absent}
-            placeholder={t('hoursShort')}
-            onChange={(e) => onChange({ ...day, hours: clampHours(Number(e.target.value)) })}
-            className="h-8 w-24 text-right text-xs"
+            onChange={(hours) => onChange({ ...day, hours })}
           />
+          <span className="self-center text-xs text-muted-foreground">{t('hoursShort')}</span>
         </div>
 
         {!absent && (
@@ -217,8 +212,8 @@ function ReportField({
 /* ------------------------------------------------- Stunden je Wochentag -- */
 
 /**
- * In der Wochenerfassung werden die Stunden trotzdem je Tag gepflegt — genau
- * das erwartet die Stundenspalte des Vordrucks neben den Wochentagen.
+ * In der Wochenerfassung werden die Stunden trotzdem je Tag gepflegt. Der
+ * Wochenvordruck druckt sie nicht einzeln, sondern nur als Gesamtsumme.
  */
 function WeekHours({
   days,
@@ -239,24 +234,15 @@ function WeekHours({
       </div>
       <div className="flex flex-wrap gap-2">
         {days.map((day, index) => (
-          <div key={day.date} className="w-[74px]">
+          <div key={day.date}>
             <div className="mb-1 text-center text-xs text-muted-foreground">
               {fromISODate(day.date).toLocaleDateString(locale, { weekday: 'short' })}
             </div>
-            <Input
-              type="number"
-              min={0}
-              max={24}
-              step={0.5}
-              value={day.hours || ''}
-              onChange={(e) =>
-                onChange(
-                  days.map((d, i) =>
-                    i === index ? { ...d, hours: clampHours(Number(e.target.value)) } : d,
-                  ),
-                )
+            <HoursInput
+              value={day.hours}
+              onChange={(hours) =>
+                onChange(days.map((d, i) => (i === index ? { ...d, hours } : d)))
               }
-              className="h-8 text-center text-sm"
             />
           </div>
         ))}

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { FileDown, Plus, Search } from 'lucide-react'
+import { ChevronDown, FileDown, Plus, Search } from 'lucide-react'
 import type { EntryStatus, WeekEntry } from '../../shared/types'
 import {
   addDays,
@@ -30,6 +30,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { PageHeader } from '@/components/Shell'
 import { WeekEditor } from '@/components/WeekEditor'
 import { useApp } from '@/hooks/useApp'
@@ -121,6 +129,7 @@ export function WeeksView({
   )
 
   async function exportPdf(ids: string[]) {
+    if (ids.length === 0 && entries.length === 0) return
     setBusy(true)
     try {
       const path = await window.api.exportPdf({
@@ -146,14 +155,56 @@ export function WeeksView({
         title={t('weeksTitle')}
         actions={
           <>
-            <Button
-              variant="outline"
-              onClick={() => exportPdf([])}
-              disabled={busy || entries.length === 0}
-            >
-              <FileDown />
-              {t('exportAllPdf')}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={busy || entries.length === 0}>
+                  <FileDown />
+                  {t('exportPdfMenu')}
+                  <ChevronDown />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => exportPdf([])}>
+                  <span>{t('exportEverything')}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {t('exportCountWeeks').replace('{n}', String(entries.length))}
+                  </span>
+                </DropdownMenuItem>
+
+                {years.length > 1 && <DropdownMenuSeparator />}
+                {years.length > 1 && <DropdownMenuLabel>{t('exportTrainingYear')}</DropdownMenuLabel>}
+                {years.length > 1 &&
+                  years.map((year) => {
+                    const ofYear = entries.filter((e) => e.trainingYear === year)
+                    return (
+                      <DropdownMenuItem
+                        key={year}
+                        onSelect={() => exportPdf(ofYear.map((e) => e.id))}
+                      >
+                        <span>
+                          {t('exportTrainingYear')} {year}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {t('exportCountWeeks').replace('{n}', String(ofYear.length))}
+                        </span>
+                      </DropdownMenuItem>
+                    )
+                  })}
+
+                {visible.length !== entries.length && <DropdownMenuSeparator />}
+                {visible.length !== entries.length && (
+                  <DropdownMenuItem
+                    disabled={visible.length === 0}
+                    onSelect={() => exportPdf(visible.map((e) => e.id))}
+                  >
+                    <span>{t('exportFiltered')}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {t('exportCountWeeks').replace('{n}', String(visible.length))}
+                    </span>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={() => setCreating(true)}>
               <Plus />
               {t('weekNew')}
